@@ -15,14 +15,22 @@ const MONTHS    = ['January','February','March','April','May','June','July','Aug
 const DAY_HDR   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
 /* ── Colour helpers ──────────────────────────────────────────────── */
+const BE_THRESHOLD = 10;
 function calCellBg(pnl, maxAbs) {
-  if (!pnl || maxAbs === 0) return '#f8fafc';
-  const i = Math.min(0.85, 0.15 + 0.7 * (Math.abs(pnl) / maxAbs));
+  if (pnl == null || maxAbs === 0) return '#f8fafc';
+  if (Math.abs(pnl) <= BE_THRESHOLD) return 'rgba(148,163,184,0.18)';
+  const i = Math.min(0.85, 0.18 + 0.67 * (Math.abs(pnl) / maxAbs));
   return pnl > 0 ? `rgba(22,163,74,${i})` : `rgba(220,38,38,${i})`;
 }
 function calCellTxt(pnl, maxAbs) {
+  if (Math.abs(pnl) <= BE_THRESHOLD) return '#64748b';
   const i = maxAbs === 0 ? 0 : Math.abs(pnl) / maxAbs;
-  return i > 0.45 ? '#fff' : (pnl >= 0 ? '#166534' : '#991b1b');
+  return i > 0.45 ? '#fff' : (pnl > 0 ? '#166534' : '#991b1b');
+}
+function dayLabel(pnl) {
+  if (pnl == null) return null;
+  if (Math.abs(pnl) <= BE_THRESHOLD) return 'BE';
+  return pnl > 0 ? 'Win' : 'Loss';
 }
 
 /* ── Sparkline ───────────────────────────────────────────────────── */
@@ -116,9 +124,12 @@ export default function DashboardPage() {
   const [data,      setData]      = useState(null);
   const [calYear,   setCalYear]   = useState(today.getFullYear());
   const [calMonth,  setCalMonth]  = useState(today.getMonth());
-  const [selected,  setSelected]  = useState(null);
+  const [selected,  setSelected]  = useState(today.getDate());
   const [chartMode, setChartMode] = useState('Days');
   const [loaded,    setLoaded]    = useState(false);
+
+  /* breakeven = between -10 and +10 */
+  const isBE = pnl => pnl != null && pnl >= -10 && pnl <= 10;
 
   const fetchDash = useCallback(async () => {
     setLoaded(false);
@@ -139,7 +150,10 @@ export default function DashboardPage() {
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
   const cells = [...Array(firstDay).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)];
 
-  const growthRaw = data?.growthData || [];
+  const growthRaw = (data?.growthData || []).filter(g => {
+    const d = g.date;
+    return d >= startDate && d <= endDate;
+  });
   const growthChart = chartMode === 'Days'
     ? growthRaw.map(g => ({ date: g.date.slice(5), val: g.cumulativePnl }))
     : (() => {
@@ -154,7 +168,15 @@ export default function DashboardPage() {
   const selectedKey = selected
     ? `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(selected).padStart(2,'0')}`
     : null;
-  const selDay = selectedKey ? calMap[selectedKey] : null;
+
+  /* today's key — for default summary */
+  const todayKey  = fmt8(today);
+  const todayData = calMap[todayKey];
+  const selDay    = selectedKey ? calMap[selectedKey] : (todayData ?? null);
+  const selDate   = selected
+    ? new Date(calYear, calMonth, selected)
+    : today;
+  const noTradesToday = !todayData;
 
   /* range helper for calendar greying */
   const isInRange = (yr, mo, dy) => {
@@ -177,7 +199,7 @@ export default function DashboardPage() {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc', fontFamily: "'DM Sans', sans-serif" }}>
       <Sidebar />
-      <main style={{ flex: 1, padding: '10px 18px', overflowY: 'auto' }}>
+      <main style={{ flex: 1, padding: '12px 22px', overflowY: 'auto', minWidth: 0 }}>
 
         {/* ── Header ─────────────────────────────────────────────── */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
@@ -194,104 +216,102 @@ export default function DashboardPage() {
         </div>
 
         {/* ── Stats row ──────────────────────────────────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr 1fr 1fr 2.5fr', gap: 8, marginBottom: 10, ...fadeIn }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr 1fr 1fr 2.6fr', gap: 10, marginBottom: 12, ...fadeIn }}>
 
           {/* Net P&L */}
-          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '9px 11px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', transition: 'box-shadow .2s', cursor: 'default' }}
-            onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,.1)'}
-            onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,.05)'}>
-            <div style={{ fontSize: 9.5, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 3 }}>Net P&L</div>
-            <div style={{ fontSize: 16, fontWeight: 700 }}>
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '11px 13px', boxShadow: '0 1px 4px rgba(0,0,0,.06)', transition: 'box-shadow .25s, transform .2s', cursor: 'default' }}
+            onMouseEnter={e => { e.currentTarget.style.boxShadow='0 6px 18px rgba(0,0,0,.11)'; e.currentTarget.style.transform='translateY(-2px)'; }}
+            onMouseLeave={e => { e.currentTarget.style.boxShadow='0 1px 4px rgba(0,0,0,.06)';  e.currentTarget.style.transform='translateY(0)'; }}>
+            <div style={{ fontSize: 10, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 3 }}>Net P&L</div>
+            <div style={{ fontSize: 17, fontWeight: 700 }}>
               <AnimNum value={data?.netPnl} prefix="₹" decimals={0}/>
             </div>
-            <div style={{ fontSize: 9.5, marginTop: 2, color: (data?.changePercent ?? 0) >= 0 ? '#16a34a' : '#dc2626', fontWeight: 600 }}>
+            <div style={{ fontSize: 10, marginTop: 2, color: (data?.changePercent ?? 0) >= 0 ? '#16a34a' : '#dc2626', fontWeight: 600 }}>
               {(data?.changePercent ?? 0) >= 0 ? '↑' : '↓'} {Math.abs(data?.changePercent ?? 0).toFixed(1)}% vs 30 days
             </div>
-            <Sparkline data={growthChart} color={data?.netPnl >= 0 ? '#16a34a' : '#dc2626'} h={26}/>
+            <Sparkline data={growthChart} color={data?.netPnl >= 0 ? '#16a34a' : '#dc2626'} h={28}/>
           </div>
 
-          {/* Trades + W/L/BE — merged card */}
-          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '9px 11px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', display: 'flex', alignItems: 'stretch', transition: 'box-shadow .2s' }}
-            onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,.1)'}
-            onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,.05)'}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 9.5, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 3 }}>Trades</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: '#0f172a' }}>{data?.totalTrades ?? 0}</div>
-              <div style={{ fontSize: 9.5, color: '#94a3b8', marginTop: 2 }}>Total</div>
+          {/* Trades + W/L/BE — merged, Trades col smaller */}
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '11px 13px', boxShadow: '0 1px 4px rgba(0,0,0,.06)', display: 'flex', alignItems: 'stretch', transition: 'box-shadow .25s, transform .2s' }}
+            onMouseEnter={e => { e.currentTarget.style.boxShadow='0 6px 18px rgba(0,0,0,.11)'; e.currentTarget.style.transform='translateY(-2px)'; }}
+            onMouseLeave={e => { e.currentTarget.style.boxShadow='0 1px 4px rgba(0,0,0,.06)';  e.currentTarget.style.transform='translateY(0)'; }}>
+            <div style={{ flex: 0.65 }}>
+              <div style={{ fontSize: 10, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 3 }}>Trades</div>
+              <div style={{ fontSize: 22, fontWeight: 700, color: '#0f172a' }}>{data?.totalTrades ?? 0}</div>
+              <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>Total</div>
             </div>
-            <div style={{ width: 1, background: '#e2e8f0', margin: '2px 12px' }}/>
+            <div style={{ width: 1, background: '#e2e8f0', margin: '2px 13px' }}/>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 9.5, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 3 }}>W / L / BE</div>
-              <div style={{ fontSize: 15, fontWeight: 700 }}>
+              <div style={{ fontSize: 10, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 3 }}>W / L / BE</div>
+              <div style={{ fontSize: 19, fontWeight: 700 }}>
                 <span style={{ color: '#16a34a' }}>{data?.wins ?? 0}</span>
-                <span style={{ color: '#94a3b8', fontWeight: 400 }}> / </span>
+                <span style={{ color: '#cbd5e1', fontWeight: 400 }}> / </span>
                 <span style={{ color: '#dc2626' }}>{data?.losses ?? 0}</span>
-                <span style={{ color: '#94a3b8', fontWeight: 400 }}> / </span>
+                <span style={{ color: '#cbd5e1', fontWeight: 400 }}> / </span>
                 <span style={{ color: '#94a3b8' }}>{data?.bes ?? 0}</span>
               </div>
-              <div style={{ fontSize: 9.5, color: '#94a3b8', marginTop: 2 }}>Total</div>
+              <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>Total</div>
               <WLBar w={data?.wins} l={data?.losses} be={data?.bes}/>
             </div>
           </div>
 
           {/* Win Rate */}
-          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '9px 11px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', transition: 'box-shadow .2s' }}
-            onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,.1)'}
-            onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,.05)'}>
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '11px 13px', boxShadow: '0 1px 4px rgba(0,0,0,.06)', transition: 'box-shadow .25s, transform .2s' }}
+            onMouseEnter={e => { e.currentTarget.style.boxShadow='0 6px 18px rgba(0,0,0,.11)'; e.currentTarget.style.transform='translateY(-2px)'; }}
+            onMouseLeave={e => { e.currentTarget.style.boxShadow='0 1px 4px rgba(0,0,0,.06)';  e.currentTarget.style.transform='translateY(0)'; }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
-                <div style={{ fontSize: 9.5, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 3 }}>Win Rate</div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#16a34a' }}>{data?.winRate?.toFixed(1) ?? 0}%</div>
-                <div style={{ fontSize: 9.5, color: '#16a34a', marginTop: 2, fontWeight: 600 }}>↑ {data?.winRate?.toFixed(1) ?? 0}%</div>
+                <div style={{ fontSize: 10, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 3 }}>Win Rate</div>
+                <div style={{ fontSize: 17, fontWeight: 700, color: '#16a34a' }}>{data?.winRate?.toFixed(1) ?? 0}%</div>
+                <div style={{ fontSize: 10, color: '#16a34a', marginTop: 2, fontWeight: 600 }}>↑ {data?.winRate?.toFixed(1) ?? 0}%</div>
               </div>
-              <Donut pct={data?.winRate ?? 0} size={44}/>
+              <Donut pct={data?.winRate ?? 0} size={46}/>
             </div>
-            <Sparkline data={growthChart} color="#16a34a" h={22}/>
+            <Sparkline data={growthChart} color="#16a34a" h={24}/>
           </div>
 
           {/* RR */}
-          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '9px 11px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', transition: 'box-shadow .2s' }}
-            onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,.1)'}
-            onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,.05)'}>
-            <div style={{ fontSize: 9.5, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 3 }}>RR (Risk Reward)</div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: '#0f172a' }}>{data?.avgRR?.toFixed(2) ?? '0.00'} R</div>
-            <div style={{ fontSize: 9.5, color: '#94a3b8', marginTop: 2 }}>avg R</div>
-            <Sparkline data={growthChart} color="#2563eb" h={26}/>
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '11px 13px', boxShadow: '0 1px 4px rgba(0,0,0,.06)', transition: 'box-shadow .25s, transform .2s' }}
+            onMouseEnter={e => { e.currentTarget.style.boxShadow='0 6px 18px rgba(0,0,0,.11)'; e.currentTarget.style.transform='translateY(-2px)'; }}
+            onMouseLeave={e => { e.currentTarget.style.boxShadow='0 1px 4px rgba(0,0,0,.06)';  e.currentTarget.style.transform='translateY(0)'; }}>
+            <div style={{ fontSize: 10, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 3 }}>RR (Risk Reward)</div>
+            <div style={{ fontSize: 17, fontWeight: 700, color: '#0f172a' }}>{data?.avgRR?.toFixed(2) ?? '0.00'} R</div>
+            <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>avg R</div>
+            <Sparkline data={growthChart} color="#2563eb" h={28}/>
           </div>
 
-          {/* Stats merged card: Days Win%/Totals | Biggest Win/Loss */}
-          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '9px 11px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', display: 'flex', alignItems: 'stretch', transition: 'box-shadow .2s' }}
-            onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,.1)'}
-            onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,.05)'}>
-            {/* Left col */}
+          {/* Stats merged card */}
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '11px 13px', boxShadow: '0 1px 4px rgba(0,0,0,.06)', display: 'flex', alignItems: 'stretch', transition: 'box-shadow .25s, transform .2s' }}
+            onMouseEnter={e => { e.currentTarget.style.boxShadow='0 6px 18px rgba(0,0,0,.11)'; e.currentTarget.style.transform='translateY(-2px)'; }}
+            onMouseLeave={e => { e.currentTarget.style.boxShadow='0 1px 4px rgba(0,0,0,.06)';  e.currentTarget.style.transform='translateY(0)'; }}>
             <div style={{ flex: 1.6 }}>
               {[
                 ['Days Win %', `${data?.daysWinPercent?.toFixed(1) ?? 0}% (${data?.daysWin ?? 0}/${data?.totalTradingDays ?? 0})`, '#16a34a'],
                 ['Total Win / Loss', `${fmtR(data?.totalWin)} / -${fmtR(Math.abs(data?.totalLoss ?? 0))}`, null],
                 ['Avg Win / Loss', `${fmtR(data?.avgWin)} / -${fmtR(Math.abs(data?.avgLoss ?? 0))}`, null],
               ].map(([k, v, c]) => (
-                <div key={k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5, fontSize: 10.5 }}>
+                <div key={k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, fontSize: 11 }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#64748b' }}>
                     <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#94a3b8', flexShrink: 0, display: 'inline-block' }}/>
                     {k}
                   </span>
-                  <span style={{ fontWeight: 600, color: c || '#0f172a', fontSize: 10.5 }}>{v}</span>
+                  <span style={{ fontWeight: 600, color: c || '#0f172a', fontSize: 11 }}>{v}</span>
                 </div>
               ))}
             </div>
-            <div style={{ width: 1, background: '#e2e8f0', margin: '2px 14px' }}/>
-            {/* Right col */}
+            <div style={{ width: 1, background: '#e2e8f0', margin: '2px 16px' }}/>
             <div style={{ flex: 1 }}>
               {[
                 ['Biggest Win', fmtR(data?.biggestWin), '#16a34a'],
                 ['Biggest Loss', `-${fmtR(Math.abs(data?.biggestLoss ?? 0))}`, '#dc2626'],
               ].map(([k, v, c]) => (
-                <div key={k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5, fontSize: 10.5 }}>
+                <div key={k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, fontSize: 11 }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#64748b' }}>
                     <span style={{ width: 5, height: 5, borderRadius: '50%', background: c, flexShrink: 0, display: 'inline-block' }}/>
                     {k}
                   </span>
-                  <span style={{ fontWeight: 600, color: c, fontSize: 11 }}>{v}</span>
+                  <span style={{ fontWeight: 600, color: c, fontSize: 11.5 }}>{v}</span>
                 </div>
               ))}
             </div>
@@ -299,20 +319,26 @@ export default function DashboardPage() {
         </div>
 
         {/* ── Calendar + Right Panel ──────────────────────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '0.75fr 380px', gap: 10, ...fadeIn, transitionDelay: '.1s' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: 12, ...fadeIn, transitionDelay: '.1s' }}>
 
           {/* Calendar */}
-          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 16px', boxShadow: '0 1px 3px rgba(0,0,0,.05)' }}>
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '14px 18px', boxShadow: '0 1px 4px rgba(0,0,0,.06)', transition: 'box-shadow .25s' }}
+            onMouseEnter={e => e.currentTarget.style.boxShadow='0 4px 16px rgba(0,0,0,.09)'}
+            onMouseLeave={e => e.currentTarget.style.boxShadow='0 1px 4px rgba(0,0,0,.06)'}>
             {/* Calendar header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-              <span style={{ fontWeight: 700, fontSize: 13, color: '#0f172a' }}>Trading Calendar</span>
+              <span style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>Trading Calendar</span>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
               <button onClick={() => { const d = new Date(calYear, calMonth-1); setCalYear(d.getFullYear()); setCalMonth(d.getMonth()); }}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '3px 6px', borderRadius: 6, color: '#64748b', fontSize: 16, lineHeight: 1, marginLeft: 'auto' }}>‹</button>
-              <span style={{ fontWeight: 600, fontSize: 13, minWidth: 90, textAlign: 'center' }}>{MONTHS[calMonth]} {calYear}</span>
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '3px 7px', borderRadius: 6, color: '#64748b', fontSize: 17, lineHeight: 1, marginLeft: 'auto', transition: 'background .15s' }}
+                onMouseEnter={e => e.currentTarget.style.background='#f1f5f9'}
+                onMouseLeave={e => e.currentTarget.style.background='none'}>‹</button>
+              <span style={{ fontWeight: 600, fontSize: 13.5, minWidth: 96, textAlign: 'center' }}>{MONTHS[calMonth]} {calYear}</span>
               <button onClick={() => { const d = new Date(calYear, calMonth+1); setCalYear(d.getFullYear()); setCalMonth(d.getMonth()); }}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '3px 6px', borderRadius: 6, color: '#64748b', fontSize: 16, lineHeight: 1 }}>›</button>
-              <div style={{ display: 'flex', gap: 10, fontSize: 11, color: '#64748b', marginLeft: 8 }}>
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '3px 7px', borderRadius: 6, color: '#64748b', fontSize: 17, lineHeight: 1, transition: 'background .15s' }}
+                onMouseEnter={e => e.currentTarget.style.background='#f1f5f9'}
+                onMouseLeave={e => e.currentTarget.style.background='none'}>›</button>
+              <div style={{ display: 'flex', gap: 10, fontSize: 11.5, color: '#64748b', marginLeft: 8 }}>
                 {[['#16a34a','Win'],['#dc2626','Loss'],['#94a3b8','BE']].map(([c,l]) => (
                   <span key={l} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     <span style={{ width: 7, height: 7, borderRadius: '50%', background: c, display: 'inline-block' }}/>
@@ -323,39 +349,41 @@ export default function DashboardPage() {
             </div>
 
             {/* Day headers */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 2, marginBottom: 2 }}>
-              {DAY_HDR.map(h => <div key={h} style={{ textAlign: 'center', fontSize: 11, fontWeight: 600, color: '#94a3b8', padding: '3px 0' }}>{h}</div>)}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 3, marginBottom: 3 }}>
+              {DAY_HDR.map(h => <div key={h} style={{ textAlign: 'center', fontSize: 12, fontWeight: 600, color: '#94a3b8', padding: '3px 0' }}>{h}</div>)}
             </div>
 
             {/* Cells */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 5 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 3 }}>
               {cells.map((day, idx) => {
-                if (!day) return <div key={idx} style={{ aspectRatio: '1', background: '#f8fafc', borderRadius: 6 }}/>;
+                if (!day) return <div key={idx} style={{ aspectRatio: '1', background: '#f8fafc', borderRadius: 7 }}/>;
                 const key = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
                 const d   = calMap[key];
                 const inRange = isInRange(calYear, calMonth, day);
                 const bg  = d && inRange ? calCellBg(d.netPnl, maxAbs) : '#f8fafc';
                 const tc  = d && inRange ? calCellTxt(d.netPnl, maxAbs) : '#c4cdd6';
-                const isToday = key === fmt8(today);
+                const isToday  = key === fmt8(today);
+                const isSel    = selected === day;
                 return (
                   <div key={idx}
-                    onClick={() => inRange && d && setSelected(selected === day ? null : day)}
+                    onClick={() => { if (inRange && d) setSelected(isSel ? null : day); }}
                     style={{
-                      aspectRatio: '1', borderRadius: 6, padding: '4px 5px',
+                      aspectRatio: '1', borderRadius: 7, padding: '5px 6px',
                       background: bg, cursor: d && inRange ? 'pointer' : 'default',
-                      border: isToday ? '2px solid #2563eb' : selected === day ? '2px solid #2563eb' : '2px solid transparent',
-                      opacity: inRange ? 1 : 0.45,
-                      transition: 'transform .15s, box-shadow .15s',
+                      border: isToday ? '2px solid #2563eb' : isSel ? '2px solid #2563eb' : '2px solid transparent',
+                      opacity: inRange ? 1 : 0.38,
+                      transition: 'transform .18s ease, box-shadow .18s ease, opacity .2s',
+                      position: 'relative',
                     }}
-                    onMouseEnter={e => { if (d && inRange) { e.currentTarget.style.transform = 'scale(1.04)'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,.12)'; }}}
-                    onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
+                    onMouseEnter={e => { if (d && inRange) { e.currentTarget.style.transform='scale(1.06)'; e.currentTarget.style.boxShadow='0 3px 10px rgba(0,0,0,.14)'; e.currentTarget.style.zIndex='2'; }}}
+                    onMouseLeave={e => { e.currentTarget.style.transform='scale(1)'; e.currentTarget.style.boxShadow='none'; e.currentTarget.style.zIndex='auto'; }}
                   >
-                    <div style={{ fontSize: 10, fontWeight: 600, color: tc, opacity: .85 }}>{day}</div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: tc, opacity: .85 }}>{day}</div>
                     {d && inRange && <>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: tc, marginTop: 1 }}>
+                      <div style={{ fontSize: 10.5, fontWeight: 700, color: tc, marginTop: 1 }}>
                         {d.netPnl >= 0 ? '+' : ''}{fmtR(d.netPnl)}
                       </div>
-                      <div style={{ fontSize: 9, color: tc, opacity: .85 }}>
+                      <div style={{ fontSize: 9.5, color: tc, opacity: .85 }}>
                         {d.totalR >= 0 ? '+' : ''}{d.totalR?.toFixed(2)} R
                       </div>
                     </>}
@@ -369,52 +397,65 @@ export default function DashboardPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
             {/* Summary panel */}
-            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '12px 14px', boxShadow: '0 1px 3px rgba(0,0,0,.05)' }}>
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '13px 15px', boxShadow: '0 1px 4px rgba(0,0,0,.06)', transition: 'box-shadow .25s' }}
+              onMouseEnter={e => e.currentTarget.style.boxShadow='0 4px 16px rgba(0,0,0,.09)'}
+              onMouseLeave={e => e.currentTarget.style.boxShadow='0 1px 4px rgba(0,0,0,.06)'}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <span style={{ fontWeight: 600, fontSize: 13 }}>Summary</span>
-                {selDay && <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 16, lineHeight: 1 }}>×</button>}
+                <span style={{ fontWeight: 600, fontSize: 13.5 }}>Summary</span>
+                {selected && <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 17, lineHeight: 1, transition: 'color .15s' }}
+                  onMouseEnter={e => e.currentTarget.style.color='#475569'}
+                  onMouseLeave={e => e.currentTarget.style.color='#94a3b8'}>×</button>}
               </div>
-              {!selDay ? (
-                <div style={{ color: '#94a3b8', fontSize: 12, textAlign: 'center', padding: '16px 0' }}>
-                  Click a day on the<br/>calendar to see its summary
+
+              {/* No selection and no today trades */}
+              {!selDay && !selected ? (
+                <div style={{ color: '#94a3b8', fontSize: 12, textAlign: 'center', padding: '14px 0' }}>
+                  <div style={{ fontSize: 28, marginBottom: 6 }}>📅</div>
+                  No Trades Today, click on<br/>another day to see summary...
+                </div>
+              ) : !selDay ? (
+                <div style={{ color: '#94a3b8', fontSize: 12, textAlign: 'center', padding: '14px 0' }}>
+                  <div style={{ fontSize: 28, marginBottom: 6 }}>📅</div>
+                  No trades on this day
                 </div>
               ) : (
-                <div style={{ animation: 'fadeIn .25s ease', display: 'flex', gap: 14 }}>
-                  {/* Left: date + big PnL */}
-                  <div style={{ minWidth: 110 }}>
+                <div style={{ display: 'flex', gap: 12, animation: 'fadeIn .25s ease' }}>
+                  {/* Left col */}
+                  <div style={{ minWidth: 115 }}>
                     <div style={{ fontSize: 10.5, color: '#64748b', marginBottom: 4 }}>
-                      {new Date(calYear, calMonth, selected).toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' })}
+                      {selDate.toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' })}
                     </div>
-                    <div style={{ fontSize: 22, fontWeight: 700, color: cls(selDay.netPnl), lineHeight: 1.1 }}>
+                    <div style={{ fontSize: 23, fontWeight: 700, color: cls(selDay.netPnl), lineHeight: 1.1 }}>
                       {selDay.netPnl >= 0 ? '+' : ''}{fmtR(selDay.netPnl)}
                     </div>
-                    <div style={{ fontSize: 11, color: '#64748b', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 5, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                       {selDay.totalR >= 0 ? '+' : ''}{selDay.totalR?.toFixed(2)} R
                       <span style={{
-                        background: selDay.netPnl > 0 ? '#dcfce7' : selDay.netPnl < 0 ? '#fee2e2' : '#f1f5f9',
-                        color: cls(selDay.netPnl), fontWeight: 700, fontSize: 10, padding: '2px 7px', borderRadius: 20
+                        background: Math.abs(selDay.netPnl) <= 10 ? '#f1f5f9' : selDay.netPnl > 0 ? '#dcfce7' : '#fee2e2',
+                        color: cls(selDay.netPnl), fontWeight: 700, fontSize: 10, padding: '2px 8px', borderRadius: 20,
                       }}>
-                        {selDay.netPnl > 0 ? 'Win' : selDay.netPnl < 0 ? 'Loss' : 'BE'}
+                        {dayLabel(selDay.netPnl)}
                       </span>
                     </div>
                     <button onClick={() => navigate('/trades')}
-                      style={{ marginTop: 10, padding: '5px 10px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 7, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 600, color: '#2563eb', width: '100%' }}>
+                      style={{ marginTop: 10, padding: '5px 10px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 600, color: '#2563eb', width: '100%', transition: 'background .15s, border-color .15s' }}
+                      onMouseEnter={e => { e.currentTarget.style.background='#eff6ff'; e.currentTarget.style.borderColor='#2563eb'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background='#fff'; e.currentTarget.style.borderColor='#e2e8f0'; }}>
                       View Trades
                     </button>
                   </div>
-                  {/* Divider */}
                   <div style={{ width: 1, background: '#f1f5f9', flexShrink: 0 }}/>
-                  {/* Right: stats */}
+                  {/* Right col */}
                   <div style={{ flex: 1 }}>
                     {[
-                      ['Win / Loss / BE', `${selDay.wins} / ${selDay.losses} / ${selDay.bes}`, null],
-                      ['Win Rate', `${selDay.winRate?.toFixed(2)}%`, selDay.winRate >= 50 ? '#16a34a' : '#dc2626'],
-                      ['Total Win', fmtR(selDay.totalWin ?? (selDay.wins > 0 ? Math.abs(selDay.netPnl > 0 ? selDay.netPnl : 0) : 0)), '#16a34a'],
+                      ['Win / Loss / BE', `${selDay.wins ?? 0} / ${selDay.losses ?? 0} / ${selDay.bes ?? 0}`, null],
+                      ['Win Rate', `${selDay.winRate?.toFixed(2) ?? 0}%`, (selDay.winRate ?? 0) >= 50 ? '#16a34a' : '#dc2626'],
+                      ['Total Win',  fmtR(selDay.totalWin  ?? 0), '#16a34a'],
                       ['Total Loss', selDay.losses > 0 ? `-${fmtR(Math.abs(selDay.totalLoss ?? 0))}` : '₹0', '#dc2626'],
                       ['Net P&L', `${selDay.netPnl >= 0 ? '+' : ''}${fmtR(selDay.netPnl)}`, cls(selDay.netPnl)],
-                      ['Trades', selDay.tradeCount, null],
+                      ['Trades', selDay.tradeCount ?? 0, null],
                     ].map(([k, v, c]) => (
-                      <div key={k} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f8fafc', padding: '4px 0', fontSize: 11.5 }}>
+                      <div key={k} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f8fafc', padding: '4.5px 0', fontSize: 12 }}>
                         <span style={{ color: '#64748b' }}>{k}</span>
                         <span style={{ fontWeight: 600, color: c || '#0f172a' }}>{v}</span>
                       </div>
@@ -425,55 +466,64 @@ export default function DashboardPage() {
             </div>
 
             {/* Growth chart */}
-            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 16px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', flex: 1 }}>
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '14px 16px', boxShadow: '0 1px 4px rgba(0,0,0,.06)', flex: 1, transition: 'box-shadow .25s' }}
+              onMouseEnter={e => e.currentTarget.style.boxShadow='0 4px 16px rgba(0,0,0,.09)'}
+              onMouseLeave={e => e.currentTarget.style.boxShadow='0 1px 4px rgba(0,0,0,.06)'}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                <span style={{ fontWeight: 600, fontSize: 12.5 }}>Growth (P&L Over Time)</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontWeight: 600, fontSize: 13 }}>Growth (P&L Over Time)</span>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                </div>
                 <div style={{ display: 'flex', gap: 3 }}>
                   {['Days','Weeks'].map(m => (
                     <button key={m} onClick={() => setChartMode(m)} style={{
-                      padding: '3px 9px', borderRadius: 6, border: 'none', cursor: 'pointer',
-                      fontFamily: 'inherit', fontWeight: 600, fontSize: 11,
+                      padding: '4px 10px', borderRadius: 7, border: 'none', cursor: 'pointer',
+                      fontFamily: 'inherit', fontWeight: 600, fontSize: 11.5,
                       background: chartMode === m ? '#2563eb' : '#f1f5f9',
                       color: chartMode === m ? '#fff' : '#64748b',
-                      transition: 'all .15s',
+                      transition: 'all .18s',
                     }}>{m}</button>
                   ))}
                 </div>
               </div>
 
-              <ResponsiveContainer width="100%" height={175}>
-                <AreaChart data={growthChart} margin={{ top: 5, right: 5, left: -22, bottom: 0 }}>
+              <ResponsiveContainer width="100%" height={185}>
+                <AreaChart data={growthChart} margin={{ top: 5, right: 8, left: -18, bottom: 0 }}>
                   <defs>
                     <linearGradient id="growthGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={gMax >= 0 ? '#16a34a' : '#dc2626'} stopOpacity={0.3}/>
+                      <stop offset="0%" stopColor={gMax >= 0 ? '#16a34a' : '#dc2626'} stopOpacity={0.28}/>
                       <stop offset={zeroPct} stopColor={gMax >= 0 ? '#16a34a' : '#dc2626'} stopOpacity={0.05}/>
                       <stop offset={zeroPct} stopColor="#dc2626" stopOpacity={0.05}/>
-                      <stop offset="100%" stopColor="#dc2626" stopOpacity={0.2}/>
+                      <stop offset="100%" stopColor="#dc2626" stopOpacity={0.22}/>
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false}/>
-                  <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false}/>
-                  <YAxis tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false}
-                    tickFormatter={v => `₹${v >= 1000 || v <= -1000 ? `${(v/1000).toFixed(0)}k` : v}`}/>
-                  <ReferenceLine y={0} stroke="#e2e8f0" strokeDasharray="3 3"/>
-                  <Tooltip formatter={v => [fmtR(v), 'Cumulative P&L']} contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 11 }} labelStyle={{ fontSize: 11 }}/>
+                  <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} interval="preserveStartEnd"/>
+                  <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickCount={6}
+                    tickFormatter={v => `₹${Math.abs(v) >= 1000 ? `${(v/1000).toFixed(0)}k` : v}`}/>
+                  <ReferenceLine y={0} stroke="#cbd5e1" strokeDasharray="4 3"/>
+                  <Tooltip
+                    formatter={v => [fmtR(v), 'Cumulative P&L']}
+                    contentStyle={{ borderRadius: 9, border: '1px solid #e2e8f0', fontSize: 12, boxShadow: '0 4px 12px rgba(0,0,0,.08)' }}
+                    labelStyle={{ fontSize: 12, fontWeight: 600 }}
+                    cursor={{ stroke: '#cbd5e1', strokeWidth: 1 }}/>
                   <Area type="monotone" dataKey="val" stroke={data?.netPnl >= 0 ? '#16a34a' : '#dc2626'}
-                    strokeWidth={2} fill="url(#growthGrad)" dot={false} activeDot={{ r: 3 }}
-                    animationDuration={800}/>
+                    strokeWidth={2.5} fill="url(#growthGrad)" dot={false} activeDot={{ r: 4, strokeWidth: 2 }}
+                    animationDuration={900}/>
                 </AreaChart>
               </ResponsiveContainer>
 
               {/* Bottom bar */}
-              <div style={{ display: 'flex', gap: 16, marginTop: 10, paddingTop: 10, borderTop: '1px solid #f1f5f9' }}>
+              <div style={{ display: 'flex', gap: 0, marginTop: 10, paddingTop: 10, borderTop: '1px solid #f1f5f9' }}>
                 {[
-                  ['Starting Balance', '₹0.00'],
-                  ['Ending Balance', fmtR(data?.endingBalance ?? 0)],
-                  ['Net P&L', fmtR(data?.netPnl ?? 0)],
-                  ['Change', `↑ ${data?.changePercent?.toFixed(1) ?? 0}%`],
-                ].map(([k, v]) => (
-                  <div key={k}>
-                    <div style={{ fontSize: 10, color: '#64748b', marginBottom: 2 }}>{k}</div>
-                    <div style={{ fontWeight: 700, fontSize: 12, color: k === 'Net P&L' ? cls(data?.netPnl) : '#0f172a' }}>{v}</div>
+                  ['Starting Balance', '₹0.00', null],
+                  ['Ending Balance',   fmtR(data?.endingBalance ?? 0), null],
+                  ['Net P&L',          fmtR(data?.netPnl ?? 0), cls(data?.netPnl)],
+                  ['Change',           `${(data?.changePercent ?? 0) >= 0 ? '↑' : '↓'} ${Math.abs(data?.changePercent ?? 0).toFixed(1)}%`, cls(data?.netPnl)],
+                ].map(([k, v, c]) => (
+                  <div key={k} style={{ flex: 1 }}>
+                    <div style={{ fontSize: 10.5, color: '#64748b', marginBottom: 2 }}>{k}</div>
+                    <div style={{ fontWeight: 700, fontSize: 13, color: c || '#0f172a' }}>{v}</div>
                   </div>
                 ))}
               </div>
@@ -485,6 +535,11 @@ export default function DashboardPage() {
       </main>
       <style>{`
         @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+        * { box-sizing: border-box; }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
       `}</style>
     </div>
   );
