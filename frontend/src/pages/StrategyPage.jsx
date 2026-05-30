@@ -39,17 +39,17 @@ const injectStyles = () => {
 
     /* ── Currency Toggle ─────────────────────── */
     .sp-currency-bar {
-      display: flex; align-items: center; gap: 8px;
-      justify-content: flex-end; margin-bottom: 18px;
+      display: flex; align-items: center; gap: 7px;
+      justify-content: flex-end; margin-bottom: 12px;
     }
     .sp-currency-symbol {
-      font-size: 12px; font-weight: 500; color: #94a3b8;
+      font-size: 13px; font-weight: 500; color: #94a3b8;
       transition: color .25s, font-weight .25s;
-      min-width: 18px; text-align: center;
+      min-width: 16px; text-align: center;
     }
     .sp-currency-symbol.active { color: #1e293b; font-weight: 600; }
     .sp-toggle {
-      position: relative; width: 46px; height: 24px; cursor: pointer;
+      position: relative; width: 44px; height: 22px; cursor: pointer;
     }
     .sp-toggle input { opacity: 0; width: 0; height: 0; }
     .sp-toggle-track {
@@ -60,7 +60,7 @@ const injectStyles = () => {
     .sp-toggle input:checked + .sp-toggle-track { background: #22c55e; border-color: #22c55e; }
     .sp-toggle-thumb {
       position: absolute; top: 2px; left: 2px;
-      width: 18px; height: 18px; border-radius: 50%;
+      width: 16px; height: 16px; border-radius: 50%;
       background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.18);
       transition: transform .28s cubic-bezier(.34,1.56,.64,1);
       pointer-events: none;
@@ -71,12 +71,12 @@ const injectStyles = () => {
     .sp-card {
       background: #fff;
       border: 1px solid #e8edf3;
-      border-radius: 18px;
-      padding: 22px 24px 20px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 12px rgba(15,23,42,.06);
+      border-radius: 14px;
+      padding: 14px 16px 12px;
+      margin-bottom: 14px;
+      box-shadow: 0 2px 10px rgba(15,23,42,.05);
       opacity: 0;
-      transform: translateY(22px);
+      transform: translateY(18px);
       animation: spCardIn .45s cubic-bezier(.22,1,.36,1) forwards;
     }
     @keyframes spCardIn {
@@ -91,24 +91,24 @@ const injectStyles = () => {
 
     /* header */
     .sp-card-header {
-      display: flex; align-items: center; gap: 10px; margin-bottom: 18px;
+      display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
     }
     .sp-card-icon {
-      width: 36px; height: 36px; border-radius: 10px;
+      width: 28px; height: 28px; border-radius: 8px;
       background: #f0fdf4; color: #16a34a;
       display: flex; align-items: center; justify-content: center;
     }
     .sp-card-name {
-      font-size: 12.8px; font-weight: 600; color: #1e293b; margin: 0;
+      font-size: 14px; font-weight: 600; color: #1e293b; margin: 0;
     }
     .sp-badge {
-      font-size: 8.8px; font-weight: 500; padding: 2px 8px;
+      font-size: 10px; font-weight: 500; padding: 2px 7px;
       border-radius: 999px; background: #f0fdf4; color: #16a34a;
       letter-spacing: .02em; border: 1px solid #bbf7d0;
     }
     .sp-del-btn {
-      margin-left: auto; background: #fff2f2; border: none; border-radius: 8px;
-      width: 32px; height: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      margin-left: auto; background: #fff2f2; border: none; border-radius: 7px;
+      width: 28px; height: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center;
       transition: background .2s, transform .15s;
     }
     .sp-del-btn:hover { background: #fecaca; transform: scale(1.08); }
@@ -117,7 +117,7 @@ const injectStyles = () => {
     .sp-sections {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 14px;
+      gap: 10px;
     }
     @media (max-width: 960px) {
       .sp-sections { grid-template-columns: repeat(2, 1fr); }
@@ -128,35 +128,35 @@ const injectStyles = () => {
 
     /* sub-card */
     .sp-section {
-      border-radius: 14px;
+      border-radius: 11px;
       border: 1.5px solid #e8edf3;
-      padding: 16px;
+      padding: 11px 12px;
       transition: box-shadow .25s, transform .25s, border-color .25s;
       cursor: default;
     }
     .sp-section:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 24px rgba(15,23,42,.09);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(15,23,42,.08);
     }
 
     /* highlighted total summary card */
     .sp-section.sp-section--total {
       border-color: #bbf7d0;
       background: #f8fffe;
-      box-shadow: 0 1px 8px rgba(22,163,74,.07);
+      box-shadow: 0 1px 6px rgba(22,163,74,.07);
     }
     .sp-section.sp-section--total:hover {
-      box-shadow: 0 6px 20px rgba(22,163,74,.11);
+      box-shadow: 0 5px 16px rgba(22,163,74,.11);
     }
 
     .sp-sec-title {
-      display: flex; align-items: center; gap: 7px;
-      font-size: 9.2px; font-weight: 600; letter-spacing: .05em;
-      text-transform: uppercase; color: #94a3b8; margin-bottom: 14px;
+      display: flex; align-items: center; gap: 6px;
+      font-size: 10px; font-weight: 600; letter-spacing: .05em;
+      text-transform: uppercase; color: #94a3b8; margin-bottom: 10px;
     }
     .sp-section--total .sp-sec-title { color: #4ade80; }
     .sp-sec-title-icon {
-      width: 24px; height: 24px; border-radius: 6px;
+      width: 20px; height: 20px; border-radius: 5px;
       background: #f1f5f9; display: flex; align-items: center; justify-content: center;
       color: #94a3b8;
     }
@@ -166,41 +166,41 @@ const injectStyles = () => {
 
     /* TWL */
     .sp-twl-label {
-      font-size: 9.2px; color: #94a3b8; margin-bottom: 4px; font-weight: 400;
+      font-size: 10px; color: #94a3b8; margin-bottom: 3px; font-weight: 400;
     }
     .sp-twl-nums {
-      font-size: 14.4px; font-weight: 500; color: #1e293b;
+      font-size: 16px; font-weight: 500; color: #1e293b;
       font-family: 'DM Mono', monospace;
-      display: flex; align-items: baseline; gap: 4px; margin-bottom: 14px;
+      display: flex; align-items: baseline; gap: 3px; margin-bottom: 10px;
     }
-    .sp-twl-sep { font-size: 12px; color: #cbd5e1; font-weight: 400; }
+    .sp-twl-sep { font-size: 13px; color: #cbd5e1; font-weight: 400; }
     .sp-twl-w   { color: #16a34a; }
     .sp-twl-l   { color: #ef4444; }
 
     /* stat rows */
     .sp-stat-row {
       display: flex; justify-content: space-between; align-items: center;
-      padding: 6px 0;
+      padding: 5px 0;
       border-top: 1px solid #f1f5f9;
-      font-size: 10.4px;
+      font-size: 11px;
     }
     .sp-stat-key { color: #64748b; font-weight: 400; }
-    .sp-stat-val { font-weight: 500; color: #1e293b; font-family: 'DM Mono', monospace; font-size: 10.4px; }
+    .sp-stat-val { font-weight: 500; color: #1e293b; font-family: 'DM Mono', monospace; font-size: 11px; }
     .sp-stat-val.green { color: #16a34a; }
     .sp-stat-val.red   { color: #ef4444; }
 
     /* earned footer */
     .sp-earned-footer {
-      margin-top: 12px;
+      margin-top: 8px;
       text-align: center;
-      padding: 10px 8px 4px;
+      padding: 7px 6px 3px;
       border-top: 1.5px dashed #e8edf3;
-      font-size: 12px; font-weight: 600; color: #16a34a;
+      font-size: 13px; font-weight: 600; color: #16a34a;
       font-family: 'DM Mono', monospace;
     }
     .sp-section--total .sp-earned-footer {
       border-top-color: #bbf7d0;
-      font-size: 12.8px;
+      font-size: 14px;
     }
 
     /* currency pill animation */
@@ -217,15 +217,15 @@ const injectStyles = () => {
 
     /* empty state */
     .sp-empty {
-      text-align: center; padding: 52px 20px;
-      background: #fff; border-radius: 16px;
+      text-align: center; padding: 40px 20px;
+      background: #fff; border-radius: 14px;
       border: 1.5px dashed #e2e8f0; color: #94a3b8;
     }
-    .sp-empty-icon { font-size: 28.8px; margin-bottom: 10px; }
+    .sp-empty-icon { font-size: 30px; margin-bottom: 8px; }
 
     /* FAB */
     .sp-fab {
-      display: flex; justify-content: flex-end; margin-top: 12px;
+      display: flex; justify-content: flex-end; margin-top: 8px;
     }
 
     /* Modal */
@@ -237,34 +237,34 @@ const injectStyles = () => {
     }
     @keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
     .sp-modal {
-      background: #fff; border-radius: 18px; padding: 28px;
-      width: 360px; box-shadow: 0 20px 60px rgba(15,23,42,.18);
+      background: #fff; border-radius: 16px; padding: 22px;
+      width: 340px; box-shadow: 0 20px 60px rgba(15,23,42,.18);
       animation: modalIn .25s cubic-bezier(.34,1.56,.64,1);
     }
     @keyframes modalIn {
       from { opacity: 0; transform: scale(.92) translateY(12px); }
       to   { opacity: 1; transform: none; }
     }
-    .sp-modal h3 { font-size: 14.4px; font-weight: 700; margin: 0 0 20px; }
-    .sp-modal label { font-size: 10.4px; font-weight: 600; color: #374151; display: block; margin-bottom: 6px; }
+    .sp-modal h3 { font-size: 16px; font-weight: 700; margin: 0 0 16px; }
+    .sp-modal label { font-size: 11px; font-weight: 600; color: #374151; display: block; margin-bottom: 5px; }
     .sp-modal input {
       width: 100%; box-sizing: border-box;
-      border: 1.5px solid #e5e7eb; border-radius: 10px;
-      padding: 9px 12px; font-size: 11.2px; font-family: inherit;
+      border: 1.5px solid #e5e7eb; border-radius: 9px;
+      padding: 8px 11px; font-size: 12px; font-family: inherit;
       outline: none; transition: border-color .2s;
     }
     .sp-modal input:focus { border-color: #16a34a; }
     .sp-modal-footer {
-      display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px;
+      display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px;
     }
 
     /* loading shimmer */
     .sp-shimmer {
-      border-radius: 18px; overflow: hidden;
+      border-radius: 14px; overflow: hidden;
       background: linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%);
       background-size: 200% 100%;
       animation: shimmer 1.4s infinite;
-      height: 200px; margin-bottom: 20px;
+      height: 160px; margin-bottom: 14px;
     }
     @keyframes shimmer {
       from { background-position: 200% 0; }
@@ -352,18 +352,18 @@ export default function StrategyPage() {
       <main className="main-content">
 
         {/* Page heading */}
-        <div style={{ marginBottom: 6 }}>
-          <h1 style={{ fontSize: 17.6, fontWeight: 700, margin: 0 }}>
+        <div style={{ marginBottom: 4 }}>
+          <h1 style={{ fontSize: 19, fontWeight: 700, margin: 0 }}>
             Welcome back, {user?.name?.split(' ')[0] || ''} 👋
           </h1>
-          <p style={{ color: '#64748b', fontSize: 10.8, marginTop: 4, marginBottom: 0 }}>
+          <p style={{ color: '#64748b', fontSize: 12, marginTop: 3, marginBottom: 0 }}>
             Analyze your strategies across different sessions.
           </p>
         </div>
 
         {/* Currency toggle */}
-        <div className="sp-currency-bar" style={{ marginTop: 18 }}>
-          <span style={{ fontSize: 8.8, color: '#94a3b8' }}>
+        <div className="sp-currency-bar" style={{ marginTop: 10 }}>
+          <span style={{ fontSize: 10, color: '#94a3b8' }}>
             1$ ≈ ₹{rate.toFixed(1)}
           </span>
           <span className={`sp-currency-symbol${!usd ? ' active' : ''}`}>₹</span>
