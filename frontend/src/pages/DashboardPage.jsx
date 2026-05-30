@@ -188,7 +188,7 @@ export default function DashboardPage() {
         </div>
 
         {/* ── Stats row ──────────────────────────────────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr 1.2fr', gap: 10, marginBottom: 14, ...fadeIn }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr 1fr 1fr 1.1fr 1.1fr', gap: 10, marginBottom: 12, ...fadeIn }}>
 
           {/* Net P&L */}
           <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '12px 14px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', transition: 'box-shadow .2s', cursor: 'default' }}
@@ -198,46 +198,52 @@ export default function DashboardPage() {
             <div style={{ fontSize: 19, fontWeight: 700 }}>
               <AnimNum value={data?.netPnl} prefix="₹" decimals={0}/>
             </div>
-            <div style={{ fontSize: 10.5, color: '#94a3b8', marginTop: 2 }}>vs 30 days</div>
+            <div style={{ fontSize: 10.5, marginTop: 2, color: (data?.changePercent ?? 0) >= 0 ? '#16a34a' : '#dc2626', fontWeight: 600 }}>
+              {(data?.changePercent ?? 0) >= 0 ? '↑' : '↓'} {Math.abs(data?.changePercent ?? 0).toFixed(1)}% vs 30 days
+            </div>
             <Sparkline data={growthChart} color={data?.netPnl >= 0 ? '#16a34a' : '#dc2626'} h={32}/>
           </div>
 
-          {/* Trades */}
-          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '12px 14px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', transition: 'box-shadow .2s' }}
+          {/* Trades + W/L/BE — merged card */}
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '12px 14px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', display: 'flex', alignItems: 'stretch', transition: 'box-shadow .2s' }}
             onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,.1)'}
             onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,.05)'}>
-            <div style={{ fontSize: 10.5, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>Trades</div>
-            <div style={{ fontSize: 19, fontWeight: 700, color: '#0f172a' }}>{data?.totalTrades ?? 0}</div>
-            <div style={{ fontSize: 10.5, color: '#94a3b8', marginTop: 2 }}>Total</div>
-            <WLBar w={data?.wins} l={data?.losses} be={data?.bes}/>
-          </div>
-
-          {/* W/L/BE */}
-          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '12px 14px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', transition: 'box-shadow .2s' }}
-            onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,.1)'}
-            onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,.05)'}>
-            <div style={{ fontSize: 10.5, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>W / L / BE</div>
-            <div style={{ fontSize: 17, fontWeight: 700 }}>
-              <span style={{ color: '#16a34a' }}>{data?.wins ?? 0}</span>
-              <span style={{ color: '#94a3b8', fontWeight: 400 }}> / </span>
-              <span style={{ color: '#dc2626' }}>{data?.losses ?? 0}</span>
-              <span style={{ color: '#94a3b8', fontWeight: 400 }}> / </span>
-              <span style={{ color: '#94a3b8' }}>{data?.bes ?? 0}</span>
+            {/* Left: Trades */}
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 10.5, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>Trades</div>
+              <div style={{ fontSize: 19, fontWeight: 700, color: '#0f172a' }}>{data?.totalTrades ?? 0}</div>
+              <div style={{ fontSize: 10.5, color: '#94a3b8', marginTop: 2 }}>Total</div>
             </div>
-            <div style={{ fontSize: 10.5, color: '#94a3b8', marginTop: 2 }}>Total</div>
-            <WLBar w={data?.wins} l={data?.losses} be={data?.bes}/>
+            {/* Vertical divider */}
+            <div style={{ width: 1, background: '#e2e8f0', margin: '2px 14px' }}/>
+            {/* Right: W/L/BE */}
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 10.5, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>W / L / BE</div>
+              <div style={{ fontSize: 17, fontWeight: 700 }}>
+                <span style={{ color: '#16a34a' }}>{data?.wins ?? 0}</span>
+                <span style={{ color: '#94a3b8', fontWeight: 400 }}> / </span>
+                <span style={{ color: '#dc2626' }}>{data?.losses ?? 0}</span>
+                <span style={{ color: '#94a3b8', fontWeight: 400 }}> / </span>
+                <span style={{ color: '#94a3b8' }}>{data?.bes ?? 0}</span>
+              </div>
+              <div style={{ fontSize: 10.5, color: '#94a3b8', marginTop: 2 }}>Total</div>
+              <WLBar w={data?.wins} l={data?.losses} be={data?.bes}/>
+            </div>
           </div>
 
           {/* Win Rate */}
-          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '12px 14px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'box-shadow .2s' }}
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '12px 14px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', transition: 'box-shadow .2s' }}
             onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,.1)'}
             onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,.05)'}>
-            <div>
-              <div style={{ fontSize: 10.5, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>Win Rate</div>
-              <div style={{ fontSize: 19, fontWeight: 700, color: '#0f172a' }}>{data?.winRate?.toFixed(1) ?? 0}%</div>
-              <div style={{ fontSize: 10.5, color: '#94a3b8', marginTop: 2 }}>↑ {data?.winRate?.toFixed(1) ?? 0}%</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <div style={{ fontSize: 10.5, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>Win Rate</div>
+                <div style={{ fontSize: 19, fontWeight: 700, color: '#16a34a' }}>{data?.winRate?.toFixed(1) ?? 0}%</div>
+                <div style={{ fontSize: 10.5, color: '#16a34a', marginTop: 2, fontWeight: 600 }}>↑ {data?.winRate?.toFixed(1) ?? 0}%</div>
+              </div>
+              <Donut pct={data?.winRate ?? 0}/>
             </div>
-            <Donut pct={data?.winRate ?? 0}/>
+            <Sparkline data={growthChart} color="#16a34a" h={28}/>
           </div>
 
           {/* RR */}
@@ -250,38 +256,59 @@ export default function DashboardPage() {
             <Sparkline data={growthChart} color="#2563eb" h={32}/>
           </div>
 
-          {/* Summary stats card */}
+          {/* Stats card 1: Days Win%, Total Win/Loss, Avg Win/Loss */}
           <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '12px 14px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', transition: 'box-shadow .2s' }}
             onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,.1)'}
             onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,.05)'}>
             {[
               ['Days Win %', `${data?.daysWinPercent?.toFixed(1) ?? 0}% (${data?.daysWin ?? 0}/${data?.totalTradingDays ?? 0})`, '#16a34a'],
-              ['Total Win / Loss', `${fmtR(data?.totalWin)} / ${fmtR(data?.totalLoss)}`, null],
-              ['Avg Win / Loss', `${fmtR(data?.avgWin)} / ${fmtR(data?.avgLoss)}`, null],
-              ['Biggest Win', fmtR(data?.biggestWin), '#16a34a'],
-              ['Biggest Loss', fmtR(data?.biggestLoss), '#dc2626'],
+              ['Total Win / Loss', `${fmtR(data?.totalWin)} / -${fmtR(Math.abs(data?.totalLoss ?? 0))}`, null],
+              ['Avg Win / Loss', `${fmtR(data?.avgWin)} / -${fmtR(Math.abs(data?.avgLoss ?? 0))}`, null],
             ].map(([k, v, c]) => (
-              <div key={k} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 11 }}>
-                <span style={{ color: '#64748b' }}>{k}</span>
-                <span style={{ fontWeight: 600, color: c || '#0f172a' }}>{v}</span>
+              <div key={k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, fontSize: 11 }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#64748b' }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#94a3b8', flexShrink: 0, display: 'inline-block' }}/>
+                  {k}
+                </span>
+                <span style={{ fontWeight: 600, color: c || '#0f172a', fontSize: 11 }}>{v}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Stats card 2: Biggest Win / Loss */}
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '12px 14px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', transition: 'box-shadow .2s' }}
+            onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,.1)'}
+            onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,.05)'}>
+            {[
+              ['Biggest Win', fmtR(data?.biggestWin), '#16a34a'],
+              ['Biggest Loss', `-${fmtR(Math.abs(data?.biggestLoss ?? 0))}`, '#dc2626'],
+            ].map(([k, v, c]) => (
+              <div key={k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, fontSize: 11 }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#64748b' }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: c, flexShrink: 0, display: 'inline-block' }}/>
+                  {k}
+                </span>
+                <span style={{ fontWeight: 600, color: c, fontSize: 12 }}>{v}</span>
               </div>
             ))}
           </div>
         </div>
 
         {/* ── Calendar + Right Panel ──────────────────────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 12, ...fadeIn, transitionDelay: '.1s' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 12, ...fadeIn, transitionDelay: '.1s' }}>
 
           {/* Calendar */}
           <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 16px', boxShadow: '0 1px 3px rgba(0,0,0,.05)' }}>
             {/* Calendar header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <span style={{ fontWeight: 700, fontSize: 13, color: '#0f172a' }}>Trading Calendar</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
               <button onClick={() => { const d = new Date(calYear, calMonth-1); setCalYear(d.getFullYear()); setCalMonth(d.getMonth()); }}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '3px 6px', borderRadius: 6, color: '#64748b', fontSize: 16, lineHeight: 1 }}>‹</button>
-              <span style={{ fontWeight: 600, fontSize: 13 }}>{MONTHS[calMonth]} {calYear}</span>
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '3px 6px', borderRadius: 6, color: '#64748b', fontSize: 16, lineHeight: 1, marginLeft: 'auto' }}>‹</button>
+              <span style={{ fontWeight: 600, fontSize: 13, minWidth: 90, textAlign: 'center' }}>{MONTHS[calMonth]} {calYear}</span>
               <button onClick={() => { const d = new Date(calYear, calMonth+1); setCalYear(d.getFullYear()); setCalMonth(d.getMonth()); }}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '3px 6px', borderRadius: 6, color: '#64748b', fontSize: 16, lineHeight: 1 }}>›</button>
-              <div style={{ marginLeft: 'auto', display: 'flex', gap: 10, fontSize: 11, color: '#64748b' }}>
+              <div style={{ display: 'flex', gap: 10, fontSize: 11, color: '#64748b', marginLeft: 8 }}>
                 {[['#16a34a','Win'],['#dc2626','Loss'],['#94a3b8','BE']].map(([c,l]) => (
                   <span key={l} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     <span style={{ width: 7, height: 7, borderRadius: '50%', background: c, display: 'inline-block' }}/>
@@ -299,7 +326,7 @@ export default function DashboardPage() {
             {/* Cells */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 2 }}>
               {cells.map((day, idx) => {
-                if (!day) return <div key={idx} style={{ minHeight: 58, background: '#f8fafc', borderRadius: 6 }}/>;
+                if (!day) return <div key={idx} style={{ minHeight: 50, background: '#f8fafc', borderRadius: 6 }}/>;
                 const key = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
                 const d   = calMap[key];
                 const bg  = d ? calCellBg(d.netPnl, maxAbs) : '#f8fafc';
@@ -310,7 +337,7 @@ export default function DashboardPage() {
                   <div key={idx}
                     onClick={() => setSelected(selected === day ? null : day)}
                     style={{
-                      minHeight: 58, borderRadius: 6, padding: '5px 6px',
+                      minHeight: 50, borderRadius: 6, padding: '4px 6px',
                       background: bg, cursor: d ? 'pointer' : 'default',
                       border: isToday ? '2px solid #2563eb' : selected === day ? '2px solid #2563eb' : '2px solid transparent',
                       transition: 'transform .15s, box-shadow .15s',
@@ -398,8 +425,8 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <ResponsiveContainer width="100%" height={160}>
-                <AreaChart data={growthChart} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+              <ResponsiveContainer width="100%" height={175}>
+                <AreaChart data={growthChart} margin={{ top: 5, right: 5, left: -22, bottom: 0 }}>
                   <defs>
                     <linearGradient id="growthGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor={gMax >= 0 ? '#16a34a' : '#dc2626'} stopOpacity={0.3}/>
