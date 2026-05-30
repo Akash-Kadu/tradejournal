@@ -328,7 +328,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Cells */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 2 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 5 }}>
               {cells.map((day, idx) => {
                 if (!day) return <div key={idx} style={{ aspectRatio: '1', background: '#f8fafc', borderRadius: 6 }}/>;
                 const key = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
