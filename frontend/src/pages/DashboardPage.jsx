@@ -1,30 +1,112 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import {
+  AreaChart, Area, XAxis, YAxis, Tooltip,
+  ResponsiveContainer, CartesianGrid, ReferenceLine
+} from 'recharts';
 import Sidebar    from '../components/Sidebar';
 import { useAuth } from '../context/AuthContext';
 import api        from '../services/api';
 
 const today     = new Date();
 const thirtyAgo = new Date(); thirtyAgo.setDate(today.getDate() - 30);
-const fmt8 = d => d.toISOString().split('T')[0];
+const fmt8      = d => d.toISOString().split('T')[0];
+const MONTHS    = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DAY_HDR   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
-const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-const DAY_HEADERS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-
-// Colour intensity: profit=green, loss=red, darker = bigger
-function cellColor(pnl, maxAbs) {
-  if (pnl === 0 || maxAbs === 0) return '#f8fafc';
-  const intensity = Math.min(0.9, 0.15 + 0.75 * (Math.abs(pnl) / maxAbs));
-  if (pnl > 0) return `rgba(22,163,74,${intensity})`;
-  return `rgba(220,38,38,${intensity})`;
+/* ── Colour helpers ──────────────────────────────────────────────── */
+function calCellBg(pnl, maxAbs) {
+  if (!pnl || maxAbs === 0) return '#f8fafc';
+  const i = Math.min(0.85, 0.15 + 0.7 * (Math.abs(pnl) / maxAbs));
+  return pnl > 0 ? `rgba(22,163,74,${i})` : `rgba(220,38,38,${i})`;
+}
+function calCellTxt(pnl, maxAbs) {
+  const i = maxAbs === 0 ? 0 : Math.abs(pnl) / maxAbs;
+  return i > 0.45 ? '#fff' : (pnl >= 0 ? '#166534' : '#991b1b');
 }
 
-function cellTextColor(pnl, maxAbs) {
-  const intensity = maxAbs === 0 ? 0 : Math.abs(pnl) / maxAbs;
-  return intensity > 0.45 ? '#fff' : (pnl >= 0 ? '#166534' : '#991b1b');
+/* ── Sparkline ───────────────────────────────────────────────────── */
+function Sparkline({ data = [], color = '#16a34a', h = 38 }) {
+  if (data.length < 2) return <div style={{ height: h }} />;
+  const vals = data.map(d => d.val ?? d.cumulativePnl ?? 0);
+  const mn = Math.min(...vals), mx = Math.max(...vals);
+  const rng = mx - mn || 1;
+  const W = 100;
+  const pts = vals.map((v, i) => `${(i / (vals.length - 1)) * W},${h - ((v - mn) / rng) * h}`).join(' ');
+  const areaClose = `${(vals.length - 1) / (vals.length - 1) * W},${h} 0,${h}`;
+  return (
+    <svg width="100%" height={h} viewBox={`0 0 ${W} ${h}`} preserveAspectRatio="none">
+      <defs>
+        <linearGradient id={`sg${color.replace('#','')}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.25"/>
+          <stop offset="100%" stopColor={color} stopOpacity="0"/>
+        </linearGradient>
+      </defs>
+      <polygon points={`${pts} ${areaClose}`} fill={`url(#sg${color.replace('#','')})`}/>
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
 }
 
+/* ── Donut ───────────────────────────────────────────────────────── */
+function Donut({ pct = 0, size = 52 }) {
+  const r = 16, c = 2 * Math.PI * r;
+  return (
+    <svg width={size} height={size} viewBox="0 0 42 42">
+      <circle cx="21" cy="21" r={r} fill="none" stroke="#e2e8f0" strokeWidth="5"/>
+      <circle cx="21" cy="21" r={r} fill="none" stroke="#16a34a" strokeWidth="5"
+        strokeDasharray={`${(pct / 100) * c} ${c}`}
+        strokeDashoffset={c * 0.25} strokeLinecap="round"
+        transform="rotate(-90 21 21)"
+        style={{ transition: 'stroke-dasharray .6s ease' }}/>
+    </svg>
+  );
+}
+
+/* ── W/L/BE bar ──────────────────────────────────────────────────── */
+function WLBar({ w = 0, l = 0, be = 0 }) {
+  const t = w + l + be || 1;
+  return (
+    <div style={{ display: 'flex', height: 5, borderRadius: 3, overflow: 'hidden', marginTop: 6, gap: 1 }}>
+      <div style={{ width: `${(w/t)*100}%`, background: '#16a34a', borderRadius: 3, transition: 'width .6s' }}/>
+      <div style={{ width: `${(l/t)*100}%`, background: '#dc2626', borderRadius: 3, transition: 'width .6s' }}/>
+      <div style={{ width: `${(be/t)*100}%`, background: '#94a3b8', borderRadius: 3, transition: 'width .6s' }}/>
+    </div>
+  );
+}
+
+/* ── Animated number ─────────────────────────────────────────────── */
+function AnimNum({ value, prefix = '', suffix = '', decimals = 0, color }) {
+  const [display, setDisplay] = useState(0);
+  const prev = useRef(0);
+  useEffect(() => {
+    if (value == null) return;
+    const start = prev.current, end = value, dur = 600;
+    const t0 = performance.now();
+    const step = ts => {
+      const p = Math.min((ts - t0) / dur, 1);
+      const ease = 1 - Math.pow(1 - p, 3);
+      setDisplay(start + (end - start) * ease);
+      if (p < 1) requestAnimationFrame(step);
+      else { setDisplay(end); prev.current = end; }
+    };
+    requestAnimationFrame(step);
+  }, [value]);
+  const fmt = v => {
+    const abs = Math.abs(v);
+    return abs >= 1000
+      ? abs.toLocaleString('en-IN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
+      : abs.toFixed(decimals);
+  };
+  const sign = display < 0 ? '-' : '';
+  return (
+    <span style={{ color: color || (display >= 0 ? '#16a34a' : '#dc2626') }}>
+      {sign}{prefix}{fmt(display)}{suffix}
+    </span>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════ */
 export default function DashboardPage() {
   const { user } = useAuth();
   const navigate  = useNavigate();
@@ -34,183 +116,214 @@ export default function DashboardPage() {
   const [data,      setData]      = useState(null);
   const [calYear,   setCalYear]   = useState(today.getFullYear());
   const [calMonth,  setCalMonth]  = useState(today.getMonth());
-  const [selected,  setSelected]  = useState(null); // clicked calendar day
+  const [selected,  setSelected]  = useState(null);
   const [chartMode, setChartMode] = useState('Days');
+  const [loaded,    setLoaded]    = useState(false);
 
-  const fetchDashboard = useCallback(async () => {
+  const fetchDash = useCallback(async () => {
+    setLoaded(false);
     try {
       const r = await api.get('/dashboard', { params: { startDate, endDate } });
       setData(r.data.data);
+      setTimeout(() => setLoaded(true), 50);
     } catch {}
   }, [startDate, endDate]);
 
-  useEffect(() => { fetchDashboard(); }, [fetchDashboard]);
+  useEffect(() => { fetchDash(); }, [fetchDash]);
 
-  /* ── helpers ─────────────────────────────────────────────────────────── */
+  /* helpers */
   const calMap = {};
   (data?.calendarData || []).forEach(d => { calMap[d.date] = d; });
-
   const maxAbs = Math.max(...(data?.calendarData || []).map(d => Math.abs(d.netPnl || 0)), 1);
-
-  // Build calendar grid for calYear / calMonth
-  const firstDay = new Date(calYear, calMonth, 1).getDay(); // 0=Sun
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const cells = [...Array(firstDay).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)];
 
-  const cells = [];
-  for (let i = 0; i < firstDay; i++) cells.push(null);
-  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
-
-  // Growth chart data: weekly aggregation if chartMode=Weeks
   const growthRaw = data?.growthData || [];
   const growthChart = chartMode === 'Days'
     ? growthRaw.map(g => ({ date: g.date.slice(5), val: g.cumulativePnl }))
     : (() => {
-        const weeks = {};
+        const w = {};
         growthRaw.forEach(g => {
-          const d = new Date(g.date);
-          const weekStart = new Date(d); weekStart.setDate(d.getDate() - d.getDay());
-          const key = fmt8(weekStart);
-          weeks[key] = g.cumulativePnl;
+          const d = new Date(g.date); const s = new Date(d); s.setDate(d.getDate() - d.getDay());
+          w[fmt8(s)] = g.cumulativePnl;
         });
-        return Object.entries(weeks).map(([k, v]) => ({ date: k.slice(5), val: v }));
+        return Object.entries(w).map(([k, v]) => ({ date: k.slice(5), val: v }));
       })();
 
-  const fmt = v => v == null ? '₹0' : `₹${v >= 0 ? '' : '-'}${Math.abs(v).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
-  const fmtDollar = v => v == null ? '$0' : `${v >= 0 ? '+' : '-'}$${Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 0 })}`;
-  const cls = v => v > 0 ? '#16a34a' : v < 0 ? '#dc2626' : '#64748b';
-
-  // Day summary for selected cell
-  const todayStr = fmt8(today);
   const selectedKey = selected
-    ? `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(selected).padStart(2, '0')}`
+    ? `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(selected).padStart(2,'0')}`
     : null;
-  const selectedDay = selectedKey ? calMap[selectedKey] : null;
+  const selDay = selectedKey ? calMap[selectedKey] : null;
+
+  const fmtR  = v => v == null ? '₹0' : `₹${(v < 0 ? '-' : '')}${Math.abs(v).toLocaleString('en-IN',{minimumFractionDigits:0,maximumFractionDigits:2})}`;
+  const cls   = v => v > 0 ? '#16a34a' : v < 0 ? '#dc2626' : '#64748b';
+  const sign  = v => v > 0 ? '+' : '';
+
+  /* growth chart gradient — green above 0, red below */
+  const gMin = Math.min(...growthChart.map(d => d.val), 0);
+  const gMax = Math.max(...growthChart.map(d => d.val), 0);
+  const gRange = gMax - gMin || 1;
+  const zeroPct = `${((gMax / gRange) * 100).toFixed(1)}%`;
+
+  const fadeIn = { opacity: loaded ? 1 : 0, transform: loaded ? 'translateY(0)' : 'translateY(12px)', transition: 'opacity .4s ease, transform .4s ease' };
 
   return (
-    <div className="layout">
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc', fontFamily: "'DM Sans', sans-serif" }}>
       <Sidebar />
-      <main className="main-content">
+      <main style={{ flex: 1, padding: '22px 24px', overflowY: 'auto' }}>
 
-        {/* ── Page header ─────────────────────────────────────────────── */}
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:20 }}>
+        {/* ── Header ─────────────────────────────────────────────── */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
           <div>
-            <h1 style={{ fontSize:22, fontWeight:700 }}>Welcome back, {user?.fullName?.split(' ')[0]} 👋</h1>
-            <p style={{ fontSize:13.5, color:'#64748b', marginTop:3 }}>Here's your trading performance overview.</p>
+            <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>Welcome back, {user?.fullName?.split(' ')[0]} 👋</h1>
+            <p style={{ fontSize: 13, color: '#64748b', marginTop: 3 }}>Here's your trading performance overview.</p>
           </div>
-          {/* Date range picker */}
-          <div style={{ display:'flex', alignItems:'center', gap:6, background:'#fff', border:'1px solid #e2e8f0', borderRadius:9, padding:'7px 14px', fontSize:13, boxShadow:'0 1px 3px rgba(0,0,0,.05)' }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} style={{ border:'none', outline:'none', fontSize:13, fontFamily:'inherit' }}/>
-            <span style={{ color:'#94a3b8' }}>–</span>
-            <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} style={{ border:'none', outline:'none', fontSize:13, fontFamily:'inherit' }}/>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 9, padding: '6px 12px', fontSize: 12.5, boxShadow: '0 1px 3px rgba(0,0,0,.05)' }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} style={{ border: 'none', outline: 'none', fontSize: 12.5, fontFamily: 'inherit', background: 'transparent' }}/>
+            <span style={{ color: '#94a3b8' }}>–</span>
+            <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} style={{ border: 'none', outline: 'none', fontSize: 12.5, fontFamily: 'inherit', background: 'transparent' }}/>
           </div>
         </div>
 
-        {/* ── Stat cards row ───────────────────────────────────────────── */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(6,1fr)', gap:12, marginBottom:18 }}>
+        {/* ── Stats row ──────────────────────────────────────────── */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr 1.2fr', gap: 10, marginBottom: 14, ...fadeIn }}>
+
           {/* Net P&L */}
-          <StatCard label="Net P&L" value={fmt(data?.netPnl)} color={cls(data?.netPnl)} sub={`vs 30 days`} />
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '12px 14px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', transition: 'box-shadow .2s', cursor: 'default' }}
+            onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,.1)'}
+            onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,.05)'}>
+            <div style={{ fontSize: 10.5, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>Net P&L</div>
+            <div style={{ fontSize: 19, fontWeight: 700 }}>
+              <AnimNum value={data?.netPnl} prefix="₹" decimals={0}/>
+            </div>
+            <div style={{ fontSize: 10.5, color: '#94a3b8', marginTop: 2 }}>vs 30 days</div>
+            <Sparkline data={growthChart} color={data?.netPnl >= 0 ? '#16a34a' : '#dc2626'} h={32}/>
+          </div>
+
           {/* Trades */}
-          <StatCard label="Trades" value={data?.totalTrades ?? 0} sub="Total" />
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '12px 14px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', transition: 'box-shadow .2s' }}
+            onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,.1)'}
+            onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,.05)'}>
+            <div style={{ fontSize: 10.5, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>Trades</div>
+            <div style={{ fontSize: 19, fontWeight: 700, color: '#0f172a' }}>{data?.totalTrades ?? 0}</div>
+            <div style={{ fontSize: 10.5, color: '#94a3b8', marginTop: 2 }}>Total</div>
+            <WLBar w={data?.wins} l={data?.losses} be={data?.bes}/>
+          </div>
+
           {/* W/L/BE */}
-          <div className="card" style={{ padding:'14px 16px' }}>
-            <div style={{ fontSize:11.5, fontWeight:600, color:'#64748b', textTransform:'uppercase', letterSpacing:'.04em', marginBottom:6 }}>W / L / BE</div>
-            <div style={{ fontSize:19, fontWeight:700 }}>
-              <span style={{ color:'#16a34a' }}>{data?.wins ?? 0}</span>
-              <span style={{ color:'#94a3b8', fontWeight:400 }}> / </span>
-              <span style={{ color:'#dc2626' }}>{data?.losses ?? 0}</span>
-              <span style={{ color:'#94a3b8', fontWeight:400 }}> / </span>
-              <span style={{ color:'#94a3b8' }}>{data?.bes ?? 0}</span>
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '12px 14px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', transition: 'box-shadow .2s' }}
+            onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,.1)'}
+            onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,.05)'}>
+            <div style={{ fontSize: 10.5, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>W / L / BE</div>
+            <div style={{ fontSize: 17, fontWeight: 700 }}>
+              <span style={{ color: '#16a34a' }}>{data?.wins ?? 0}</span>
+              <span style={{ color: '#94a3b8', fontWeight: 400 }}> / </span>
+              <span style={{ color: '#dc2626' }}>{data?.losses ?? 0}</span>
+              <span style={{ color: '#94a3b8', fontWeight: 400 }}> / </span>
+              <span style={{ color: '#94a3b8' }}>{data?.bes ?? 0}</span>
             </div>
-            <div style={{ fontSize:11.5, color:'#64748b', marginTop:4 }}>Total</div>
+            <div style={{ fontSize: 10.5, color: '#94a3b8', marginTop: 2 }}>Total</div>
+            <WLBar w={data?.wins} l={data?.losses} be={data?.bes}/>
           </div>
+
           {/* Win Rate */}
-          <div className="card" style={{ padding:'14px 16px', display:'flex', gap:12, alignItems:'center' }}>
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '12px 14px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'box-shadow .2s' }}
+            onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,.1)'}
+            onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,.05)'}>
             <div>
-              <div style={{ fontSize:11.5, fontWeight:600, color:'#64748b', textTransform:'uppercase', letterSpacing:'.04em', marginBottom:6 }}>Win Rate</div>
-              <div style={{ fontSize:19, fontWeight:700 }}>{data?.winRate?.toFixed(1) ?? 0}%</div>
+              <div style={{ fontSize: 10.5, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>Win Rate</div>
+              <div style={{ fontSize: 19, fontWeight: 700, color: '#0f172a' }}>{data?.winRate?.toFixed(1) ?? 0}%</div>
+              <div style={{ fontSize: 10.5, color: '#94a3b8', marginTop: 2 }}>↑ {data?.winRate?.toFixed(1) ?? 0}%</div>
             </div>
-            <svg width="42" height="42" viewBox="0 0 42 42">
-              <circle cx="21" cy="21" r="16" fill="none" stroke="#e2e8f0" strokeWidth="5"/>
-              <circle cx="21" cy="21" r="16" fill="none" stroke="#16a34a" strokeWidth="5"
-                strokeDasharray={`${(data?.winRate ?? 0) * 1.005} 100`}
-                strokeDashoffset="25" strokeLinecap="round" transform="rotate(-90 21 21)"/>
-            </svg>
+            <Donut pct={data?.winRate ?? 0}/>
           </div>
+
           {/* RR */}
-          <StatCard label="RR (Risk Reward)" value={data?.avgRR?.toFixed(2) ?? '0.00'} sub="avg R" color="#2563eb"/>
-          {/* Right stats */}
-          <div className="card" style={{ padding:'14px 16px', gridColumn:'span 1' }}>
-            <div style={{ fontSize:11.5, fontWeight:600, color:'#64748b', textTransform:'uppercase', letterSpacing:'.04em', marginBottom:8 }}>Summary</div>
-            <div style={{ fontSize:12, display:'flex', justifyContent:'space-between', marginBottom:4 }}>
-              <span style={{ color:'#64748b' }}>Days Win %</span>
-              <span style={{ color:'#16a34a', fontWeight:600 }}>{data?.daysWinPercent?.toFixed(1) ?? 0}% ({data?.daysWin ?? 0}/{data?.totalTradingDays ?? 0})</span>
-            </div>
-            <div style={{ fontSize:12, display:'flex', justifyContent:'space-between', marginBottom:4 }}>
-              <span style={{ color:'#64748b' }}>Best Win</span>
-              <span style={{ color:'#16a34a', fontWeight:600 }}>{fmt(data?.biggestWin)}</span>
-            </div>
-            <div style={{ fontSize:12, display:'flex', justifyContent:'space-between' }}>
-              <span style={{ color:'#64748b' }}>Worst Loss</span>
-              <span style={{ color:'#dc2626', fontWeight:600 }}>{fmt(data?.biggestLoss)}</span>
-            </div>
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '12px 14px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', transition: 'box-shadow .2s' }}
+            onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,.1)'}
+            onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,.05)'}>
+            <div style={{ fontSize: 10.5, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>RR (Risk Reward)</div>
+            <div style={{ fontSize: 19, fontWeight: 700, color: '#0f172a' }}>{data?.avgRR?.toFixed(2) ?? '0.00'} R</div>
+            <div style={{ fontSize: 10.5, color: '#94a3b8', marginTop: 2 }}>avg R</div>
+            <Sparkline data={growthChart} color="#2563eb" h={32}/>
+          </div>
+
+          {/* Summary stats card */}
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '12px 14px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', transition: 'box-shadow .2s' }}
+            onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,.1)'}
+            onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,.05)'}>
+            {[
+              ['Days Win %', `${data?.daysWinPercent?.toFixed(1) ?? 0}% (${data?.daysWin ?? 0}/${data?.totalTradingDays ?? 0})`, '#16a34a'],
+              ['Total Win / Loss', `${fmtR(data?.totalWin)} / ${fmtR(data?.totalLoss)}`, null],
+              ['Avg Win / Loss', `${fmtR(data?.avgWin)} / ${fmtR(data?.avgLoss)}`, null],
+              ['Biggest Win', fmtR(data?.biggestWin), '#16a34a'],
+              ['Biggest Loss', fmtR(data?.biggestLoss), '#dc2626'],
+            ].map(([k, v, c]) => (
+              <div key={k} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 11 }}>
+                <span style={{ color: '#64748b' }}>{k}</span>
+                <span style={{ fontWeight: 600, color: c || '#0f172a' }}>{v}</span>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* ── Second row: total win/loss + avg ─────────────────────────── */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:18 }}>
-          <StatCard label="Total Win" value={fmt(data?.totalWin)} color="#16a34a"/>
-          <StatCard label="Total Loss" value={fmt(data?.totalLoss)} color="#dc2626"/>
-          <StatCard label="Avg Win" value={fmt(data?.avgWin)} color="#16a34a"/>
-          <StatCard label="Avg Loss" value={fmt(data?.avgLoss)} color="#dc2626"/>
-        </div>
-
-        {/* ── Calendar + Summary ───────────────────────────────────────── */}
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 300px', gap:16, marginBottom:18 }}>
+        {/* ── Calendar + Right Panel ──────────────────────────────── */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 12, ...fadeIn, transitionDelay: '.1s' }}>
 
           {/* Calendar */}
-          <div className="card" style={{ padding:20 }}>
-            <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:14 }}>
-              <button className="icon-btn" onClick={() => { const d = new Date(calYear, calMonth - 1); setCalYear(d.getFullYear()); setCalMonth(d.getMonth()); }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
-              </button>
-              <span style={{ fontWeight:600, fontSize:14 }}>{MONTH_NAMES[calMonth]} {calYear}</span>
-              <button className="icon-btn" onClick={() => { const d = new Date(calYear, calMonth + 1); setCalYear(d.getFullYear()); setCalMonth(d.getMonth()); }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
-              </button>
-              {/* Legend */}
-              <div style={{ marginLeft:'auto', display:'flex', gap:12, fontSize:12, color:'#64748b' }}>
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 16px', boxShadow: '0 1px 3px rgba(0,0,0,.05)' }}>
+            {/* Calendar header */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <button onClick={() => { const d = new Date(calYear, calMonth-1); setCalYear(d.getFullYear()); setCalMonth(d.getMonth()); }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '3px 6px', borderRadius: 6, color: '#64748b', fontSize: 16, lineHeight: 1 }}>‹</button>
+              <span style={{ fontWeight: 600, fontSize: 13 }}>{MONTHS[calMonth]} {calYear}</span>
+              <button onClick={() => { const d = new Date(calYear, calMonth+1); setCalYear(d.getFullYear()); setCalMonth(d.getMonth()); }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '3px 6px', borderRadius: 6, color: '#64748b', fontSize: 16, lineHeight: 1 }}>›</button>
+              <div style={{ marginLeft: 'auto', display: 'flex', gap: 10, fontSize: 11, color: '#64748b' }}>
                 {[['#16a34a','Win'],['#dc2626','Loss'],['#94a3b8','BE']].map(([c,l]) => (
-                  <span key={l} style={{ display:'flex', alignItems:'center', gap:4 }}>
-                    <span style={{ width:8, height:8, borderRadius:'50%', background:c, display:'inline-block' }}/>
+                  <span key={l} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: c, display: 'inline-block' }}/>
                     {l}
                   </span>
                 ))}
               </div>
             </div>
 
-            <div className="cal-grid">
-              {DAY_HEADERS.map(h => <div key={h} className="cal-day-header">{h}</div>)}
+            {/* Day headers */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 2, marginBottom: 2 }}>
+              {DAY_HDR.map(h => <div key={h} style={{ textAlign: 'center', fontSize: 11, fontWeight: 600, color: '#94a3b8', padding: '3px 0' }}>{h}</div>)}
+            </div>
+
+            {/* Cells */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 2 }}>
               {cells.map((day, idx) => {
-                if (!day) return <div key={idx} className="cal-cell empty" />;
-                const key = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                if (!day) return <div key={idx} style={{ minHeight: 58, background: '#f8fafc', borderRadius: 6 }}/>;
+                const key = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
                 const d   = calMap[key];
-                const bg  = d ? cellColor(d.netPnl, maxAbs) : '#f8fafc';
-                const tc  = d ? cellTextColor(d.netPnl, maxAbs) : '#94a3b8';
-                const isToday = key === todayStr;
+                const bg  = d ? calCellBg(d.netPnl, maxAbs) : '#f8fafc';
+                const tc  = d ? calCellTxt(d.netPnl, maxAbs) : '#94a3b8';
+                const isToday = key === fmt8(today);
+                const isSel   = selected === day && calYear === today.getFullYear() && calMonth === today.getMonth() || false;
                 return (
-                  <div
-                    key={idx}
-                    className={`cal-cell${isToday ? ' today' : ''}${selected === day ? ' selected' : ''}`}
-                    style={{ background: bg, borderColor: isToday ? '#2563eb' : selected === day ? '#2563eb' : 'transparent' }}
+                  <div key={idx}
                     onClick={() => setSelected(selected === day ? null : day)}
+                    style={{
+                      minHeight: 58, borderRadius: 6, padding: '5px 6px',
+                      background: bg, cursor: d ? 'pointer' : 'default',
+                      border: isToday ? '2px solid #2563eb' : selected === day ? '2px solid #2563eb' : '2px solid transparent',
+                      transition: 'transform .15s, box-shadow .15s',
+                    }}
+                    onMouseEnter={e => { if (d) { e.currentTarget.style.transform = 'scale(1.04)'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,.12)'; }}}
+                    onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
                   >
-                    <div className="day-num" style={{ color: tc, opacity:.8 }}>{day}</div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: tc, opacity: .8 }}>{day}</div>
                     {d && <>
-                      <div className="day-pnl" style={{ color: tc, fontSize:11.5 }}>
-                        {d.netPnl >= 0 ? '+' : ''}{fmt(d.netPnl)}
+                      <div style={{ fontSize: 11, fontWeight: 700, color: tc, marginTop: 2 }}>
+                        {d.netPnl >= 0 ? '+' : ''}{fmtR(d.netPnl)}
                       </div>
-                      <div className="day-r" style={{ color: tc, opacity:.85, fontSize:10.5 }}>
+                      <div style={{ fontSize: 10, color: tc, opacity: .85 }}>
                         {d.totalR >= 0 ? '+' : ''}{d.totalR?.toFixed(2)} R
                       </div>
                     </>}
@@ -220,115 +333,116 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Summary panel */}
-          <div className="card" style={{ padding:20 }}>
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
-              <span style={{ fontWeight:600, fontSize:14 }}>Summary</span>
-              {selectedDay && (
-                <button className="icon-btn" onClick={() => setSelected(null)}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                </button>
+          {/* Right column: Summary + Growth chart */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+            {/* Summary panel */}
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 16px', boxShadow: '0 1px 3px rgba(0,0,0,.05)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                <span style={{ fontWeight: 600, fontSize: 13 }}>Summary</span>
+                {selDay && <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 16, lineHeight: 1 }}>×</button>}
+              </div>
+              {!selDay ? (
+                <div style={{ color: '#94a3b8', fontSize: 12, textAlign: 'center', padding: '20px 0' }}>
+                  Click a day on the<br/>calendar to see its summary
+                </div>
+              ) : (
+                <div style={{ animation: 'fadeIn .25s ease' }}>
+                  <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>
+                    {MONTHS[calMonth]} {selected}, {calYear}
+                  </div>
+                  <div style={{ fontSize: 24, fontWeight: 700, color: cls(selDay.netPnl), marginBottom: 2 }}>
+                    {selDay.netPnl >= 0 ? '+' : ''}{fmtR(selDay.netPnl)}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#64748b', marginBottom: 12 }}>
+                    {selDay.totalR >= 0 ? '+' : ''}{selDay.totalR?.toFixed(2)} R ·{' '}
+                    <span style={{ color: cls(selDay.netPnl), fontWeight: 600 }}>
+                      {selDay.netPnl > 0 ? 'Win' : selDay.netPnl < 0 ? 'Loss' : 'BE'}
+                    </span>
+                  </div>
+                  {[
+                    ['Win / Loss / BE', `${selDay.wins} / ${selDay.losses} / ${selDay.bes}`],
+                    ['Win Rate', `${selDay.winRate?.toFixed(2)}%`],
+                    ['Total Win', fmtR(selDay.wins > 0 ? selDay.netPnl + Math.abs(selDay.netPnl < 0 ? selDay.netPnl : 0) : selDay.netPnl)],
+                    ['Total Loss', selDay.losses > 0 ? `-${fmtR(Math.abs(selDay.netPnl < 0 ? selDay.netPnl : 0))}` : '₹0'],
+                    ['Net P&L', `${selDay.netPnl >= 0 ? '+' : ''}${fmtR(selDay.netPnl)}`],
+                    ['Trades', selDay.tradeCount],
+                  ].map(([k, v]) => (
+                    <div key={k} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f1f5f9', padding: '6px 0', fontSize: 12 }}>
+                      <span style={{ color: '#64748b' }}>{k}</span>
+                      <span style={{ fontWeight: 600 }}>{v}</span>
+                    </div>
+                  ))}
+                  <button onClick={() => navigate('/trades')}
+                    style={{ width: '100%', marginTop: 12, padding: '7px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 7, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, color: '#2563eb' }}>
+                    View Trades
+                  </button>
+                </div>
               )}
             </div>
 
-            {!selectedDay ? (
-              <div style={{ color:'#94a3b8', fontSize:13, textAlign:'center', marginTop:40 }}>
-                Click a day on the calendar to see its summary
+            {/* Growth chart */}
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 16px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', flex: 1 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                <span style={{ fontWeight: 600, fontSize: 12.5 }}>Growth (P&L Over Time)</span>
+                <div style={{ display: 'flex', gap: 3 }}>
+                  {['Days','Weeks'].map(m => (
+                    <button key={m} onClick={() => setChartMode(m)} style={{
+                      padding: '3px 9px', borderRadius: 6, border: 'none', cursor: 'pointer',
+                      fontFamily: 'inherit', fontWeight: 600, fontSize: 11,
+                      background: chartMode === m ? '#2563eb' : '#f1f5f9',
+                      color: chartMode === m ? '#fff' : '#64748b',
+                      transition: 'all .15s',
+                    }}>{m}</button>
+                  ))}
+                </div>
               </div>
-            ) : (
-              <>
-                <div style={{ fontSize:11.5, color:'#64748b', marginBottom:6 }}>
-                  {MONTH_NAMES[calMonth]} {selected}, {calYear}
-                </div>
-                <div style={{ fontSize:26, fontWeight:700, color: cls(selectedDay.netPnl), marginBottom:4 }}>
-                  {selectedDay.netPnl >= 0 ? '+' : ''}{fmt(selectedDay.netPnl)}
-                </div>
-                <div style={{ fontSize:13, color:'#64748b', marginBottom:14 }}>
-                  {selectedDay.totalR >= 0 ? '+' : ''}{selectedDay.totalR?.toFixed(2)} R
-                  &nbsp;·&nbsp;
-                  <span style={{ color: selectedDay.netPnl >= 0 ? '#16a34a' : '#dc2626' }}>
-                    {selectedDay.netPnl >= 0 ? 'Win' : 'Loss'}
-                  </span>
-                </div>
+
+              <ResponsiveContainer width="100%" height={160}>
+                <AreaChart data={growthChart} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="growthGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={gMax >= 0 ? '#16a34a' : '#dc2626'} stopOpacity={0.3}/>
+                      <stop offset={zeroPct} stopColor={gMax >= 0 ? '#16a34a' : '#dc2626'} stopOpacity={0.05}/>
+                      <stop offset={zeroPct} stopColor="#dc2626" stopOpacity={0.05}/>
+                      <stop offset="100%" stopColor="#dc2626" stopOpacity={0.2}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false}/>
+                  <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false}/>
+                  <YAxis tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false}
+                    tickFormatter={v => `₹${v >= 1000 || v <= -1000 ? `${(v/1000).toFixed(0)}k` : v}`}/>
+                  <ReferenceLine y={0} stroke="#e2e8f0" strokeDasharray="3 3"/>
+                  <Tooltip formatter={v => [fmtR(v), 'Cumulative P&L']} contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 11 }} labelStyle={{ fontSize: 11 }}/>
+                  <Area type="monotone" dataKey="val" stroke={data?.netPnl >= 0 ? '#16a34a' : '#dc2626'}
+                    strokeWidth={2} fill="url(#growthGrad)" dot={false} activeDot={{ r: 3 }}
+                    animationDuration={800}/>
+                </AreaChart>
+              </ResponsiveContainer>
+
+              {/* Bottom bar */}
+              <div style={{ display: 'flex', gap: 16, marginTop: 10, paddingTop: 10, borderTop: '1px solid #f1f5f9' }}>
                 {[
-                  ['Win / Loss / BE', `${selectedDay.wins} / ${selectedDay.losses} / ${selectedDay.bes}`],
-                  ['Win Rate',        `${selectedDay.winRate?.toFixed(2)}%`],
-                  ['Trades',          selectedDay.tradeCount],
+                  ['Starting Balance', '₹0.00'],
+                  ['Ending Balance', fmtR(data?.endingBalance ?? 0)],
+                  ['Net P&L', fmtR(data?.netPnl ?? 0)],
+                  ['Change', `↑ ${data?.changePercent?.toFixed(1) ?? 0}%`],
                 ].map(([k, v]) => (
-                  <div key={k} style={{ display:'flex', justifyContent:'space-between', borderBottom:'1px solid #f1f5f9', padding:'8px 0', fontSize:13 }}>
-                    <span style={{ color:'#64748b' }}>{k}</span>
-                    <span style={{ fontWeight:600 }}>{v}</span>
+                  <div key={k}>
+                    <div style={{ fontSize: 10, color: '#64748b', marginBottom: 2 }}>{k}</div>
+                    <div style={{ fontWeight: 700, fontSize: 12, color: k === 'Net P&L' ? cls(data?.netPnl) : '#0f172a' }}>{v}</div>
                   </div>
                 ))}
-                <button
-                  className="btn btn-outline"
-                  style={{ width:'100%', marginTop:16, justifyContent:'center' }}
-                  onClick={() => navigate('/trades')}
-                >
-                  View Trades
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* ── Growth Chart ─────────────────────────────────────────────── */}
-        <div className="card" style={{ padding:20 }}>
-          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
-            <div>
-              <span style={{ fontWeight:600, fontSize:14 }}>Growth (P&amp;L Over Time)</span>
-            </div>
-            <div style={{ display:'flex', gap:4 }}>
-              {['Days','Weeks'].map(m => (
-                <button key={m} onClick={() => setChartMode(m)} style={{ padding:'5px 12px', borderRadius:7, border:'none', cursor:'pointer', fontFamily:'inherit', fontWeight:600, fontSize:12.5, background: chartMode === m ? '#2563eb' : '#f1f5f9', color: chartMode === m ? '#fff' : '#64748b' }}>
-                  {m}
-                </button>
-              ))}
-            </div>
-          </div>
-          <ResponsiveContainer width="100%" height={200}>
-            <AreaChart data={growthChart} margin={{ top:5, right:10, left:10, bottom:0 }}>
-              <defs>
-                <linearGradient id="pnlGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="#2563eb" stopOpacity={0.2}/>
-                  <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false}/>
-              <XAxis dataKey="date" tick={{ fontSize:11, fill:'#94a3b8' }} axisLine={false} tickLine={false}/>
-              <YAxis tick={{ fontSize:11, fill:'#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={v => `₹${(v/1000).toFixed(0)}k`}/>
-              <Tooltip formatter={(v) => [fmt(v), 'Cumulative P&L']} labelStyle={{ fontSize:12 }} contentStyle={{ borderRadius:8, border:'1px solid #e2e8f0', fontSize:12 }}/>
-              <Area type="monotone" dataKey="val" stroke="#2563eb" strokeWidth={2} fill="url(#pnlGrad)" dot={false} activeDot={{ r:4 }}/>
-            </AreaChart>
-          </ResponsiveContainer>
-
-          {/* Bottom summary bar */}
-          <div style={{ display:'flex', gap:24, marginTop:16, borderTop:'1px solid #f1f5f9', paddingTop:14 }}>
-            {[
-              ['Starting Balance', fmt(data?.startingBalance ?? 0)],
-              ['Ending Balance',   fmt(data?.endingBalance ?? 0)],
-              ['Net P&L',          fmt(data?.netPnl ?? 0)],
-              ['Change',           `↑ ${data?.changePercent?.toFixed(1) ?? 0}%`],
-            ].map(([k, v]) => (
-              <div key={k}>
-                <div style={{ fontSize:11.5, color:'#64748b', marginBottom:3 }}>{k}</div>
-                <div style={{ fontWeight:700, fontSize:14, color: k === 'Net P&L' ? cls(data?.netPnl) : '#0f172a' }}>{v}</div>
               </div>
-            ))}
+            </div>
+
           </div>
         </div>
 
       </main>
-    </div>
-  );
-}
-
-function StatCard({ label, value, sub, color }) {
-  return (
-    <div className="card" style={{ padding:'14px 16px' }}>
-      <div style={{ fontSize:11.5, fontWeight:600, color:'#64748b', textTransform:'uppercase', letterSpacing:'.04em', marginBottom:6 }}>{label}</div>
-      <div style={{ fontSize:20, fontWeight:700, color: color || '#0f172a' }}>{value}</div>
-      {sub && <div style={{ fontSize:11.5, color:'#94a3b8', marginTop:4 }}>{sub}</div>}
+      <style>{`
+        @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+      `}</style>
     </div>
   );
 }
