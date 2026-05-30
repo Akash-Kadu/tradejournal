@@ -39,30 +39,33 @@ const injectStyles = () => {
 
     /* ── Currency Toggle ─────────────────────── */
     .sp-currency-bar {
-      display: flex; align-items: center; gap: 10px;
+      display: flex; align-items: center; gap: 8px;
       justify-content: flex-end; margin-bottom: 18px;
     }
-    .sp-currency-label {
-      font-size: 12.5px; font-weight: 600; color: #64748b; letter-spacing: .04em; text-transform: uppercase;
+    .sp-currency-symbol {
+      font-size: 15px; font-weight: 500; color: #94a3b8;
+      transition: color .25s, font-weight .25s;
+      min-width: 18px; text-align: center;
     }
+    .sp-currency-symbol.active { color: #1e293b; font-weight: 600; }
     .sp-toggle {
-      position: relative; width: 52px; height: 26px; cursor: pointer;
+      position: relative; width: 46px; height: 24px; cursor: pointer;
     }
     .sp-toggle input { opacity: 0; width: 0; height: 0; }
     .sp-toggle-track {
       position: absolute; inset: 0; border-radius: 999px;
-      background: #e2e8f0; transition: background .3s;
+      background: #cbd5e1; transition: background .3s;
+      border: 1px solid #e2e8f0;
     }
-    .sp-toggle input:checked + .sp-toggle-track { background: #16a34a; }
+    .sp-toggle input:checked + .sp-toggle-track { background: #22c55e; border-color: #22c55e; }
     .sp-toggle-thumb {
-      position: absolute; top: 3px; left: 3px;
-      width: 20px; height: 20px; border-radius: 50%;
-      background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.2);
-      transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+      position: absolute; top: 2px; left: 2px;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.18);
+      transition: transform .28s cubic-bezier(.34,1.56,.64,1);
       pointer-events: none;
     }
-    .sp-toggle input:checked ~ .sp-toggle-thumb { transform: translateX(26px); }
-    .sp-currency-flag { font-size: 16px; }
+    .sp-toggle input:checked ~ .sp-toggle-thumb { transform: translateX(22px); }
 
     /* ── Strategy Card ───────────────────────── */
     .sp-card {
@@ -96,12 +99,12 @@ const injectStyles = () => {
       display: flex; align-items: center; justify-content: center;
     }
     .sp-card-name {
-      font-size: 17px; font-weight: 700; color: #0f172a; margin: 0;
+      font-size: 16px; font-weight: 600; color: #1e293b; margin: 0;
     }
     .sp-badge {
-      font-size: 11.5px; font-weight: 600; padding: 2px 9px;
-      border-radius: 999px; background: #dcfce7; color: #15803d;
-      letter-spacing: .03em;
+      font-size: 11px; font-weight: 500; padding: 2px 8px;
+      border-radius: 999px; background: #f0fdf4; color: #16a34a;
+      letter-spacing: .02em; border: 1px solid #bbf7d0;
     }
     .sp-del-btn {
       margin-left: auto; background: #fff2f2; border: none; border-radius: 8px;
@@ -138,41 +141,41 @@ const injectStyles = () => {
 
     /* highlighted total summary card */
     .sp-section.sp-section--total {
-      border-color: #86efac;
-      background: linear-gradient(145deg, #f0fdf4 0%, #fafffe 100%);
-      box-shadow: 0 2px 16px rgba(22,163,74,.10);
+      border-color: #bbf7d0;
+      background: #f8fffe;
+      box-shadow: 0 1px 8px rgba(22,163,74,.07);
     }
     .sp-section.sp-section--total:hover {
-      box-shadow: 0 8px 28px rgba(22,163,74,.18);
+      box-shadow: 0 6px 20px rgba(22,163,74,.11);
     }
 
     .sp-sec-title {
       display: flex; align-items: center; gap: 7px;
-      font-size: 12.5px; font-weight: 700; letter-spacing: .05em;
-      text-transform: uppercase; color: #64748b; margin-bottom: 14px;
+      font-size: 11.5px; font-weight: 600; letter-spacing: .05em;
+      text-transform: uppercase; color: #94a3b8; margin-bottom: 14px;
     }
-    .sp-section--total .sp-sec-title { color: #16a34a; }
+    .sp-section--total .sp-sec-title { color: #4ade80; }
     .sp-sec-title-icon {
-      width: 26px; height: 26px; border-radius: 7px;
+      width: 24px; height: 24px; border-radius: 6px;
       background: #f1f5f9; display: flex; align-items: center; justify-content: center;
-      color: #475569;
+      color: #94a3b8;
     }
     .sp-section--total .sp-sec-title-icon {
-      background: #dcfce7; color: #16a34a;
+      background: #dcfce7; color: #22c55e;
     }
 
     /* TWL */
     .sp-twl-label {
-      font-size: 11.5px; color: #94a3b8; margin-bottom: 4px; font-weight: 500;
+      font-size: 11.5px; color: #94a3b8; margin-bottom: 4px; font-weight: 400;
     }
     .sp-twl-nums {
-      font-size: 20px; font-weight: 700; color: #0f172a;
+      font-size: 18px; font-weight: 500; color: #1e293b;
       font-family: 'DM Mono', monospace;
       display: flex; align-items: baseline; gap: 4px; margin-bottom: 14px;
     }
-    .sp-twl-sep { font-size: 16px; color: #cbd5e1; font-weight: 400; }
+    .sp-twl-sep { font-size: 15px; color: #cbd5e1; font-weight: 400; }
     .sp-twl-w   { color: #16a34a; }
-    .sp-twl-l   { color: #dc2626; }
+    .sp-twl-l   { color: #ef4444; }
 
     /* stat rows */
     .sp-stat-row {
@@ -181,23 +184,22 @@ const injectStyles = () => {
       border-top: 1px solid #f1f5f9;
       font-size: 13px;
     }
-    .sp-stat-key { color: #64748b; font-weight: 500; }
-    .sp-stat-val { font-weight: 700; color: #0f172a; font-family: 'DM Mono', monospace; font-size: 13px; }
+    .sp-stat-key { color: #64748b; font-weight: 400; }
+    .sp-stat-val { font-weight: 500; color: #1e293b; font-family: 'DM Mono', monospace; font-size: 13px; }
     .sp-stat-val.green { color: #16a34a; }
-    .sp-stat-val.red   { color: #dc2626; }
+    .sp-stat-val.red   { color: #ef4444; }
 
     /* earned footer */
     .sp-earned-footer {
       margin-top: 12px;
       text-align: center;
-      padding: 9px 8px 5px;
-      border-top: 1.5px dashed #e2e8f0;
-      font-size: 13px; font-weight: 700; color: #16a34a;
+      padding: 9px 8px 4px;
+      border-top: 1.5px dashed #e8edf3;
+      font-size: 13px; font-weight: 600; color: #16a34a;
       font-family: 'DM Mono', monospace;
-      letter-spacing: .01em;
     }
     .sp-section--total .sp-earned-footer {
-      border-top-color: #86efac;
+      border-top-color: #bbf7d0;
     }
 
     /* currency pill animation */
@@ -360,18 +362,16 @@ export default function StrategyPage() {
 
         {/* Currency toggle */}
         <div className="sp-currency-bar" style={{ marginTop: 18 }}>
-          <span className="sp-currency-flag">🇮🇳</span>
-          <span className="sp-currency-label">INR</span>
+          <span className={`sp-currency-symbol${!usd ? ' active' : ''}`}>₹</span>
           <label className="sp-toggle">
             <input type="checkbox" checked={usd} onChange={e => setUsd(e.target.checked)} />
             <div className="sp-toggle-track" />
             <div className="sp-toggle-thumb" />
           </label>
-          <span className="sp-currency-label">USD</span>
-          <span className="sp-currency-flag">🇺🇸</span>
+          <span className={`sp-currency-symbol${usd ? ' active' : ''}`}>$</span>
           {usd && (
-            <span style={{ fontSize: 11.5, color: '#94a3b8', marginLeft: 4 }}>
-              1 USD ≈ ₹{rate.toFixed(2)}
+            <span style={{ fontSize: 11, color: '#94a3b8', marginLeft: 4 }}>
+              1$ ≈ ₹{rate.toFixed(1)}
             </span>
           )}
         </div>
