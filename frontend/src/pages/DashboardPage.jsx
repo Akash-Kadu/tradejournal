@@ -8,9 +8,9 @@ import Sidebar    from '../components/Sidebar';
 import { useAuth } from '../context/AuthContext';
 import api        from '../services/api';
 
-const today     = new Date();
-const thirtyAgo = new Date(); thirtyAgo.setDate(today.getDate() - 30);
-const fmt8      = d => d.toISOString().split('T')[0];
+const today        = new Date();
+const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+const fmt8         = d => d.toISOString().split('T')[0];
 const MONTHS    = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DAY_HDR   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
@@ -111,7 +111,7 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const navigate  = useNavigate();
 
-  const [startDate, setStartDate] = useState(fmt8(thirtyAgo));
+  const [startDate, setStartDate] = useState(fmt8(firstOfMonth));
   const [endDate,   setEndDate]   = useState(fmt8(today));
   const [data,      setData]      = useState(null);
   const [calYear,   setCalYear]   = useState(today.getFullYear());
@@ -156,6 +156,12 @@ export default function DashboardPage() {
     : null;
   const selDay = selectedKey ? calMap[selectedKey] : null;
 
+  /* range helper for calendar greying */
+  const isInRange = (yr, mo, dy) => {
+    const d = new Date(yr, mo, dy);
+    return d >= new Date(startDate) && d <= new Date(endDate);
+  };
+
   const fmtR  = v => v == null ? '₹0' : `₹${(v < 0 ? '-' : '')}${Math.abs(v).toLocaleString('en-IN',{minimumFractionDigits:0,maximumFractionDigits:2})}`;
   const cls   = v => v > 0 ? '#16a34a' : v < 0 ? '#dc2626' : '#64748b';
   const sign  = v => v > 0 ? '+' : '';
@@ -171,13 +177,13 @@ export default function DashboardPage() {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc', fontFamily: "'DM Sans', sans-serif" }}>
       <Sidebar />
-      <main style={{ flex: 1, padding: '22px 24px', overflowY: 'auto' }}>
+      <main style={{ flex: 1, padding: '10px 18px', overflowY: 'auto' }}>
 
         {/* ── Header ─────────────────────────────────────────────── */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
           <div>
-            <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>Welcome back, {user?.fullName?.split(' ')[0]} 👋</h1>
-            <p style={{ fontSize: 13, color: '#64748b', marginTop: 3 }}>Here's your trading performance overview.</p>
+            <h1 style={{ fontSize: 17, fontWeight: 700, margin: 0 }}>Welcome back, {user?.fullName?.split(' ')[0]} 👋</h1>
+            <p style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>Here's your trading performance overview.</p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 9, padding: '6px 12px', fontSize: 12.5, boxShadow: '0 1px 3px rgba(0,0,0,.05)' }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -188,114 +194,112 @@ export default function DashboardPage() {
         </div>
 
         {/* ── Stats row ──────────────────────────────────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr 1fr 1fr 1.1fr 1.1fr', gap: 10, marginBottom: 12, ...fadeIn }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr 1fr 1fr 2.5fr', gap: 8, marginBottom: 10, ...fadeIn }}>
 
           {/* Net P&L */}
-          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '12px 14px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', transition: 'box-shadow .2s', cursor: 'default' }}
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '9px 11px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', transition: 'box-shadow .2s', cursor: 'default' }}
             onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,.1)'}
             onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,.05)'}>
-            <div style={{ fontSize: 10.5, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>Net P&L</div>
-            <div style={{ fontSize: 19, fontWeight: 700 }}>
+            <div style={{ fontSize: 9.5, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 3 }}>Net P&L</div>
+            <div style={{ fontSize: 16, fontWeight: 700 }}>
               <AnimNum value={data?.netPnl} prefix="₹" decimals={0}/>
             </div>
-            <div style={{ fontSize: 10.5, marginTop: 2, color: (data?.changePercent ?? 0) >= 0 ? '#16a34a' : '#dc2626', fontWeight: 600 }}>
+            <div style={{ fontSize: 9.5, marginTop: 2, color: (data?.changePercent ?? 0) >= 0 ? '#16a34a' : '#dc2626', fontWeight: 600 }}>
               {(data?.changePercent ?? 0) >= 0 ? '↑' : '↓'} {Math.abs(data?.changePercent ?? 0).toFixed(1)}% vs 30 days
             </div>
-            <Sparkline data={growthChart} color={data?.netPnl >= 0 ? '#16a34a' : '#dc2626'} h={32}/>
+            <Sparkline data={growthChart} color={data?.netPnl >= 0 ? '#16a34a' : '#dc2626'} h={26}/>
           </div>
 
           {/* Trades + W/L/BE — merged card */}
-          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '12px 14px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', display: 'flex', alignItems: 'stretch', transition: 'box-shadow .2s' }}
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '9px 11px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', display: 'flex', alignItems: 'stretch', transition: 'box-shadow .2s' }}
             onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,.1)'}
             onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,.05)'}>
-            {/* Left: Trades */}
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 10.5, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>Trades</div>
-              <div style={{ fontSize: 19, fontWeight: 700, color: '#0f172a' }}>{data?.totalTrades ?? 0}</div>
-              <div style={{ fontSize: 10.5, color: '#94a3b8', marginTop: 2 }}>Total</div>
+              <div style={{ fontSize: 9.5, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 3 }}>Trades</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#0f172a' }}>{data?.totalTrades ?? 0}</div>
+              <div style={{ fontSize: 9.5, color: '#94a3b8', marginTop: 2 }}>Total</div>
             </div>
-            {/* Vertical divider */}
-            <div style={{ width: 1, background: '#e2e8f0', margin: '2px 14px' }}/>
-            {/* Right: W/L/BE */}
+            <div style={{ width: 1, background: '#e2e8f0', margin: '2px 12px' }}/>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 10.5, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>W / L / BE</div>
-              <div style={{ fontSize: 17, fontWeight: 700 }}>
+              <div style={{ fontSize: 9.5, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 3 }}>W / L / BE</div>
+              <div style={{ fontSize: 15, fontWeight: 700 }}>
                 <span style={{ color: '#16a34a' }}>{data?.wins ?? 0}</span>
                 <span style={{ color: '#94a3b8', fontWeight: 400 }}> / </span>
                 <span style={{ color: '#dc2626' }}>{data?.losses ?? 0}</span>
                 <span style={{ color: '#94a3b8', fontWeight: 400 }}> / </span>
                 <span style={{ color: '#94a3b8' }}>{data?.bes ?? 0}</span>
               </div>
-              <div style={{ fontSize: 10.5, color: '#94a3b8', marginTop: 2 }}>Total</div>
+              <div style={{ fontSize: 9.5, color: '#94a3b8', marginTop: 2 }}>Total</div>
               <WLBar w={data?.wins} l={data?.losses} be={data?.bes}/>
             </div>
           </div>
 
           {/* Win Rate */}
-          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '12px 14px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', transition: 'box-shadow .2s' }}
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '9px 11px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', transition: 'box-shadow .2s' }}
             onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,.1)'}
             onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,.05)'}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
-                <div style={{ fontSize: 10.5, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>Win Rate</div>
-                <div style={{ fontSize: 19, fontWeight: 700, color: '#16a34a' }}>{data?.winRate?.toFixed(1) ?? 0}%</div>
-                <div style={{ fontSize: 10.5, color: '#16a34a', marginTop: 2, fontWeight: 600 }}>↑ {data?.winRate?.toFixed(1) ?? 0}%</div>
+                <div style={{ fontSize: 9.5, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 3 }}>Win Rate</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#16a34a' }}>{data?.winRate?.toFixed(1) ?? 0}%</div>
+                <div style={{ fontSize: 9.5, color: '#16a34a', marginTop: 2, fontWeight: 600 }}>↑ {data?.winRate?.toFixed(1) ?? 0}%</div>
               </div>
-              <Donut pct={data?.winRate ?? 0}/>
+              <Donut pct={data?.winRate ?? 0} size={44}/>
             </div>
-            <Sparkline data={growthChart} color="#16a34a" h={28}/>
+            <Sparkline data={growthChart} color="#16a34a" h={22}/>
           </div>
 
           {/* RR */}
-          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '12px 14px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', transition: 'box-shadow .2s' }}
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '9px 11px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', transition: 'box-shadow .2s' }}
             onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,.1)'}
             onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,.05)'}>
-            <div style={{ fontSize: 10.5, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>RR (Risk Reward)</div>
-            <div style={{ fontSize: 19, fontWeight: 700, color: '#0f172a' }}>{data?.avgRR?.toFixed(2) ?? '0.00'} R</div>
-            <div style={{ fontSize: 10.5, color: '#94a3b8', marginTop: 2 }}>avg R</div>
-            <Sparkline data={growthChart} color="#2563eb" h={32}/>
+            <div style={{ fontSize: 9.5, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 3 }}>RR (Risk Reward)</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#0f172a' }}>{data?.avgRR?.toFixed(2) ?? '0.00'} R</div>
+            <div style={{ fontSize: 9.5, color: '#94a3b8', marginTop: 2 }}>avg R</div>
+            <Sparkline data={growthChart} color="#2563eb" h={26}/>
           </div>
 
-          {/* Stats card 1: Days Win%, Total Win/Loss, Avg Win/Loss */}
-          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '12px 14px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', transition: 'box-shadow .2s' }}
+          {/* Stats merged card: Days Win%/Totals | Biggest Win/Loss */}
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '9px 11px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', display: 'flex', alignItems: 'stretch', transition: 'box-shadow .2s' }}
             onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,.1)'}
             onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,.05)'}>
-            {[
-              ['Days Win %', `${data?.daysWinPercent?.toFixed(1) ?? 0}% (${data?.daysWin ?? 0}/${data?.totalTradingDays ?? 0})`, '#16a34a'],
-              ['Total Win / Loss', `${fmtR(data?.totalWin)} / -${fmtR(Math.abs(data?.totalLoss ?? 0))}`, null],
-              ['Avg Win / Loss', `${fmtR(data?.avgWin)} / -${fmtR(Math.abs(data?.avgLoss ?? 0))}`, null],
-            ].map(([k, v, c]) => (
-              <div key={k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, fontSize: 11 }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#64748b' }}>
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#94a3b8', flexShrink: 0, display: 'inline-block' }}/>
-                  {k}
-                </span>
-                <span style={{ fontWeight: 600, color: c || '#0f172a', fontSize: 11 }}>{v}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Stats card 2: Biggest Win / Loss */}
-          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '12px 14px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', transition: 'box-shadow .2s' }}
-            onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,.1)'}
-            onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,.05)'}>
-            {[
-              ['Biggest Win', fmtR(data?.biggestWin), '#16a34a'],
-              ['Biggest Loss', `-${fmtR(Math.abs(data?.biggestLoss ?? 0))}`, '#dc2626'],
-            ].map(([k, v, c]) => (
-              <div key={k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, fontSize: 11 }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#64748b' }}>
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: c, flexShrink: 0, display: 'inline-block' }}/>
-                  {k}
-                </span>
-                <span style={{ fontWeight: 600, color: c, fontSize: 12 }}>{v}</span>
-              </div>
-            ))}
+            {/* Left col */}
+            <div style={{ flex: 1.6 }}>
+              {[
+                ['Days Win %', `${data?.daysWinPercent?.toFixed(1) ?? 0}% (${data?.daysWin ?? 0}/${data?.totalTradingDays ?? 0})`, '#16a34a'],
+                ['Total Win / Loss', `${fmtR(data?.totalWin)} / -${fmtR(Math.abs(data?.totalLoss ?? 0))}`, null],
+                ['Avg Win / Loss', `${fmtR(data?.avgWin)} / -${fmtR(Math.abs(data?.avgLoss ?? 0))}`, null],
+              ].map(([k, v, c]) => (
+                <div key={k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5, fontSize: 10.5 }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#64748b' }}>
+                    <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#94a3b8', flexShrink: 0, display: 'inline-block' }}/>
+                    {k}
+                  </span>
+                  <span style={{ fontWeight: 600, color: c || '#0f172a', fontSize: 10.5 }}>{v}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ width: 1, background: '#e2e8f0', margin: '2px 14px' }}/>
+            {/* Right col */}
+            <div style={{ flex: 1 }}>
+              {[
+                ['Biggest Win', fmtR(data?.biggestWin), '#16a34a'],
+                ['Biggest Loss', `-${fmtR(Math.abs(data?.biggestLoss ?? 0))}`, '#dc2626'],
+              ].map(([k, v, c]) => (
+                <div key={k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5, fontSize: 10.5 }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#64748b' }}>
+                    <span style={{ width: 5, height: 5, borderRadius: '50%', background: c, flexShrink: 0, display: 'inline-block' }}/>
+                    {k}
+                  </span>
+                  <span style={{ fontWeight: 600, color: c, fontSize: 11 }}>{v}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* ── Calendar + Right Panel ──────────────────────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 12, ...fadeIn, transitionDelay: '.1s' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '0.75fr 380px', gap: 10, ...fadeIn, transitionDelay: '.1s' }}>
 
           {/* Calendar */}
           <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 16px', boxShadow: '0 1px 3px rgba(0,0,0,.05)' }}>
@@ -326,31 +330,32 @@ export default function DashboardPage() {
             {/* Cells */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 2 }}>
               {cells.map((day, idx) => {
-                if (!day) return <div key={idx} style={{ minHeight: 50, background: '#f8fafc', borderRadius: 6 }}/>;
+                if (!day) return <div key={idx} style={{ aspectRatio: '1', background: '#f8fafc', borderRadius: 6 }}/>;
                 const key = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
                 const d   = calMap[key];
-                const bg  = d ? calCellBg(d.netPnl, maxAbs) : '#f8fafc';
-                const tc  = d ? calCellTxt(d.netPnl, maxAbs) : '#94a3b8';
+                const inRange = isInRange(calYear, calMonth, day);
+                const bg  = d && inRange ? calCellBg(d.netPnl, maxAbs) : '#f8fafc';
+                const tc  = d && inRange ? calCellTxt(d.netPnl, maxAbs) : '#c4cdd6';
                 const isToday = key === fmt8(today);
-                const isSel   = selected === day && calYear === today.getFullYear() && calMonth === today.getMonth() || false;
                 return (
                   <div key={idx}
-                    onClick={() => setSelected(selected === day ? null : day)}
+                    onClick={() => inRange && d && setSelected(selected === day ? null : day)}
                     style={{
-                      minHeight: 50, borderRadius: 6, padding: '4px 6px',
-                      background: bg, cursor: d ? 'pointer' : 'default',
+                      aspectRatio: '1', borderRadius: 6, padding: '4px 5px',
+                      background: bg, cursor: d && inRange ? 'pointer' : 'default',
                       border: isToday ? '2px solid #2563eb' : selected === day ? '2px solid #2563eb' : '2px solid transparent',
+                      opacity: inRange ? 1 : 0.45,
                       transition: 'transform .15s, box-shadow .15s',
                     }}
-                    onMouseEnter={e => { if (d) { e.currentTarget.style.transform = 'scale(1.04)'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,.12)'; }}}
+                    onMouseEnter={e => { if (d && inRange) { e.currentTarget.style.transform = 'scale(1.04)'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,.12)'; }}}
                     onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
                   >
-                    <div style={{ fontSize: 11, fontWeight: 600, color: tc, opacity: .8 }}>{day}</div>
-                    {d && <>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: tc, marginTop: 2 }}>
+                    <div style={{ fontSize: 10, fontWeight: 600, color: tc, opacity: .85 }}>{day}</div>
+                    {d && inRange && <>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: tc, marginTop: 1 }}>
                         {d.netPnl >= 0 ? '+' : ''}{fmtR(d.netPnl)}
                       </div>
-                      <div style={{ fontSize: 10, color: tc, opacity: .85 }}>
+                      <div style={{ fontSize: 9, color: tc, opacity: .85 }}>
                         {d.totalR >= 0 ? '+' : ''}{d.totalR?.toFixed(2)} R
                       </div>
                     </>}
@@ -364,46 +369,57 @@ export default function DashboardPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
             {/* Summary panel */}
-            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 16px', boxShadow: '0 1px 3px rgba(0,0,0,.05)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '12px 14px', boxShadow: '0 1px 3px rgba(0,0,0,.05)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                 <span style={{ fontWeight: 600, fontSize: 13 }}>Summary</span>
                 {selDay && <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 16, lineHeight: 1 }}>×</button>}
               </div>
               {!selDay ? (
-                <div style={{ color: '#94a3b8', fontSize: 12, textAlign: 'center', padding: '20px 0' }}>
+                <div style={{ color: '#94a3b8', fontSize: 12, textAlign: 'center', padding: '16px 0' }}>
                   Click a day on the<br/>calendar to see its summary
                 </div>
               ) : (
-                <div style={{ animation: 'fadeIn .25s ease' }}>
-                  <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>
-                    {MONTHS[calMonth]} {selected}, {calYear}
-                  </div>
-                  <div style={{ fontSize: 24, fontWeight: 700, color: cls(selDay.netPnl), marginBottom: 2 }}>
-                    {selDay.netPnl >= 0 ? '+' : ''}{fmtR(selDay.netPnl)}
-                  </div>
-                  <div style={{ fontSize: 12, color: '#64748b', marginBottom: 12 }}>
-                    {selDay.totalR >= 0 ? '+' : ''}{selDay.totalR?.toFixed(2)} R ·{' '}
-                    <span style={{ color: cls(selDay.netPnl), fontWeight: 600 }}>
-                      {selDay.netPnl > 0 ? 'Win' : selDay.netPnl < 0 ? 'Loss' : 'BE'}
-                    </span>
-                  </div>
-                  {[
-                    ['Win / Loss / BE', `${selDay.wins} / ${selDay.losses} / ${selDay.bes}`],
-                    ['Win Rate', `${selDay.winRate?.toFixed(2)}%`],
-                    ['Total Win', fmtR(selDay.wins > 0 ? selDay.netPnl + Math.abs(selDay.netPnl < 0 ? selDay.netPnl : 0) : selDay.netPnl)],
-                    ['Total Loss', selDay.losses > 0 ? `-${fmtR(Math.abs(selDay.netPnl < 0 ? selDay.netPnl : 0))}` : '₹0'],
-                    ['Net P&L', `${selDay.netPnl >= 0 ? '+' : ''}${fmtR(selDay.netPnl)}`],
-                    ['Trades', selDay.tradeCount],
-                  ].map(([k, v]) => (
-                    <div key={k} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f1f5f9', padding: '6px 0', fontSize: 12 }}>
-                      <span style={{ color: '#64748b' }}>{k}</span>
-                      <span style={{ fontWeight: 600 }}>{v}</span>
+                <div style={{ animation: 'fadeIn .25s ease', display: 'flex', gap: 14 }}>
+                  {/* Left: date + big PnL */}
+                  <div style={{ minWidth: 110 }}>
+                    <div style={{ fontSize: 10.5, color: '#64748b', marginBottom: 4 }}>
+                      {new Date(calYear, calMonth, selected).toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' })}
                     </div>
-                  ))}
-                  <button onClick={() => navigate('/trades')}
-                    style={{ width: '100%', marginTop: 12, padding: '7px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 7, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, color: '#2563eb' }}>
-                    View Trades
-                  </button>
+                    <div style={{ fontSize: 22, fontWeight: 700, color: cls(selDay.netPnl), lineHeight: 1.1 }}>
+                      {selDay.netPnl >= 0 ? '+' : ''}{fmtR(selDay.netPnl)}
+                    </div>
+                    <div style={{ fontSize: 11, color: '#64748b', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {selDay.totalR >= 0 ? '+' : ''}{selDay.totalR?.toFixed(2)} R
+                      <span style={{
+                        background: selDay.netPnl > 0 ? '#dcfce7' : selDay.netPnl < 0 ? '#fee2e2' : '#f1f5f9',
+                        color: cls(selDay.netPnl), fontWeight: 700, fontSize: 10, padding: '2px 7px', borderRadius: 20
+                      }}>
+                        {selDay.netPnl > 0 ? 'Win' : selDay.netPnl < 0 ? 'Loss' : 'BE'}
+                      </span>
+                    </div>
+                    <button onClick={() => navigate('/trades')}
+                      style={{ marginTop: 10, padding: '5px 10px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 7, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 600, color: '#2563eb', width: '100%' }}>
+                      View Trades
+                    </button>
+                  </div>
+                  {/* Divider */}
+                  <div style={{ width: 1, background: '#f1f5f9', flexShrink: 0 }}/>
+                  {/* Right: stats */}
+                  <div style={{ flex: 1 }}>
+                    {[
+                      ['Win / Loss / BE', `${selDay.wins} / ${selDay.losses} / ${selDay.bes}`, null],
+                      ['Win Rate', `${selDay.winRate?.toFixed(2)}%`, selDay.winRate >= 50 ? '#16a34a' : '#dc2626'],
+                      ['Total Win', fmtR(selDay.totalWin ?? (selDay.wins > 0 ? Math.abs(selDay.netPnl > 0 ? selDay.netPnl : 0) : 0)), '#16a34a'],
+                      ['Total Loss', selDay.losses > 0 ? `-${fmtR(Math.abs(selDay.totalLoss ?? 0))}` : '₹0', '#dc2626'],
+                      ['Net P&L', `${selDay.netPnl >= 0 ? '+' : ''}${fmtR(selDay.netPnl)}`, cls(selDay.netPnl)],
+                      ['Trades', selDay.tradeCount, null],
+                    ].map(([k, v, c]) => (
+                      <div key={k} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f8fafc', padding: '4px 0', fontSize: 11.5 }}>
+                        <span style={{ color: '#64748b' }}>{k}</span>
+                        <span style={{ fontWeight: 600, color: c || '#0f172a' }}>{v}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
