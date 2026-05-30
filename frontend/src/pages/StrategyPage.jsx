@@ -193,13 +193,14 @@ const injectStyles = () => {
     .sp-earned-footer {
       margin-top: 12px;
       text-align: center;
-      padding: 9px 8px 4px;
+      padding: 10px 8px 4px;
       border-top: 1.5px dashed #e8edf3;
-      font-size: 13px; font-weight: 600; color: #16a34a;
+      font-size: 15px; font-weight: 600; color: #16a34a;
       font-family: 'DM Mono', monospace;
     }
     .sp-section--total .sp-earned-footer {
       border-top-color: #bbf7d0;
+      font-size: 16px;
     }
 
     /* currency pill animation */
@@ -362,6 +363,9 @@ export default function StrategyPage() {
 
         {/* Currency toggle */}
         <div className="sp-currency-bar" style={{ marginTop: 18 }}>
+          <span style={{ fontSize: 11, color: '#94a3b8' }}>
+            1$ ≈ ₹{rate.toFixed(1)}
+          </span>
           <span className={`sp-currency-symbol${!usd ? ' active' : ''}`}>₹</span>
           <label className="sp-toggle">
             <input type="checkbox" checked={usd} onChange={e => setUsd(e.target.checked)} />
@@ -369,11 +373,6 @@ export default function StrategyPage() {
             <div className="sp-toggle-thumb" />
           </label>
           <span className={`sp-currency-symbol${usd ? ' active' : ''}`}>$</span>
-          {usd && (
-            <span style={{ fontSize: 11, color: '#94a3b8', marginLeft: 4 }}>
-              1$ ≈ ₹{rate.toFixed(1)}
-            </span>
-          )}
         </div>
 
         {/* Strategy cards */}
@@ -449,8 +448,8 @@ export default function StrategyPage() {
                     <span className="sp-stat-val green">{s.winRate?.toFixed(2)}%</span>
                   </div>
                   <div className="sp-stat-row">
-                    <span className="sp-stat-key">Earned (₹)</span>
-                    <span className="sp-stat-val green">{fmt(s.totalEarned)}</span>
+                    <span className="sp-stat-key">Avg RR</span>
+                    <span className="sp-stat-val">{s.avgRR?.toFixed(2) ?? '—'}</span>
                   </div>
                   <div className="sp-earned-footer">
                     Earned: {fmt(s.totalEarned)}
@@ -482,10 +481,6 @@ export default function StrategyPage() {
                       <div className="sp-stat-row">
                         <span className="sp-stat-key">Average RR</span>
                         <span className="sp-stat-val">{(ss.avgRR ?? 0).toFixed(2)}</span>
-                      </div>
-                      <div className="sp-stat-row">
-                        <span className="sp-stat-key">Earned</span>
-                        <span className="sp-stat-val green">{fmt(ss.earned)}</span>
                       </div>
                       <div className="sp-earned-footer">
                         Earned: {fmt(ss.earned)}
