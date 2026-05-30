@@ -1,0 +1,11 @@
+#!/bin/sh
+# Maven Wrapper Script
+set -e
+MAVEN_WRAPPER_JAR=".mvn/wrapper/maven-wrapper.jar"
+MAVEN_WRAPPER_PROPERTIES=".mvn/wrapper/maven-wrapper.properties"
+DOWNLOAD_URL=$(grep "wrapperUrl" "$MAVEN_WRAPPER_PROPERTIES" | cut -d'=' -f2)
+if [ ! -f "$MAVEN_WRAPPER_JAR" ]; then
+  echo "Downloading Maven Wrapper..."
+  curl -o "$MAVEN_WRAPPER_JAR" "$DOWNLOAD_URL" 2>/dev/null || wget -q -O "$MAVEN_WRAPPER_JAR" "$DOWNLOAD_URL"
+fi
+exec java -jar "$MAVEN_WRAPPER_JAR" "$@"
