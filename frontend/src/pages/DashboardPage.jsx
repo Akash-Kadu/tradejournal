@@ -196,9 +196,9 @@ export default function DashboardPage() {
 
   /* range helper for calendar greying */
   const isInRange = (yr, mo, dy) => {
-    const d = new Date(yr, mo, dy);
-    return d >= new Date(startDate) && d <= new Date(endDate);
-  };
+  const key = `${yr}-${String(mo + 1).padStart(2, '0')}-${String(dy).padStart(2, '0')}`;
+  return key >= startDate && key <= endDate;
+};
 
   const fmtR = v => {
     if (v == null) return showUSD ? '$0' : '₹0';
