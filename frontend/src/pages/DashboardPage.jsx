@@ -280,11 +280,11 @@ export default function DashboardPage() {
             onMouseEnter={e => { e.currentTarget.style.boxShadow='0 6px 18px rgba(0,0,0,.11)'; e.currentTarget.style.transform='translateY(-2px)'; }}
             onMouseLeave={e => { e.currentTarget.style.boxShadow='0 1px 4px rgba(0,0,0,.06)';  e.currentTarget.style.transform='translateY(0)'; }}>
             <div style={{ fontSize: 10, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 3 }}>Net P&L</div>
-            <div style={{ fontSize: 17, fontWeight: 700 }}>
-              <AnimNum value={data?.netPnl} prefix="₹" decimals={0}/>
+            <div style={{ fontSize: 17, fontWeight: 700, color: cls(data?.netPnl) }}>
+              {(data?.netPnl ?? 0) >= 0 ? '+' : ''}{fmtR(data?.netPnl ?? 0)}
             </div>
             <div style={{ fontSize: 10, marginTop: 2, color: (data?.changePercent ?? 0) >= 0 ? '#16a34a' : '#dc2626', fontWeight: 600 }}>
-              {(data?.changePercent ?? 0) >= 0 ? '↑' : '↓'} {Math.abs(data?.changePercent ?? 0).toFixed(1)}% vs 30 days
+              {(data?.changePercent ?? 0) >= 0 ? '↑' : '↓'} {Math.abs(data?.changePercent ?? 0).toFixed(1)}% vs range
             </div>
             <Sparkline data={growthChart} color={data?.netPnl >= 0 ? '#16a34a' : '#dc2626'} h={28}/>
           </div>
@@ -406,14 +406,14 @@ export default function DashboardPage() {
             </div>
 
             {/* Day headers */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 3, marginBottom: 3 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 0.9fr))', gap: 5, marginBottom: 3 }}>
               {DAY_HDR.map(h => <div key={h} style={{ textAlign: 'center', fontSize: 12, fontWeight: 600, color: '#94a3b8', padding: '3px 0' }}>{h}</div>)}
             </div>
 
             {/* Cells */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 5, flex: 1, gridAutoRows: '1fr' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 0.9fr))', gap: 5, flex: 1, gridAutoRows: '1fr' }}>
               {cells.map((day, idx) => {
-                if (!day) return <div key={idx} style={{ background: '#f8fafc', borderRadius: 7, border: '1px solid #e8edf2', minHeight: 52 }}/>;
+                if (!day) return <div key={idx} style={{ background: '#f8fafc', borderRadius: 7, border: '1px solid #e8edf2', minHeight: 58 }}/>;
                 const key = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
                 const d   = calMap[key];
                 const inRange = isInRange(calYear, calMonth, day);
@@ -429,25 +429,31 @@ export default function DashboardPage() {
                       borderRadius: 7, padding: '5px 6px',
                       background: bg, cursor: d && inRange ? 'pointer' : 'default',
                       border: isToday ? '2px solid #2563eb' : isSel ? '2px solid #2563eb' : bdr,
-                      opacity: inRange ? 1 : 0.38,
-                      transition: 'transform .18s ease, box-shadow .18s ease, opacity .2s',
-                      position: 'relative', minHeight: 52,
+                      opacity: inRange ? 1 : 0,
+                      pointerEvents: inRange ? 'auto' : 'none',
+                      transition: 'transform .18s ease, box-shadow .18s ease',
+                      position: 'relative', minHeight: 58,
                     }}
                     onMouseEnter={e => { if (d && inRange) { e.currentTarget.style.transform='scale(1.06)'; e.currentTarget.style.boxShadow='0 3px 10px rgba(0,0,0,.14)'; e.currentTarget.style.zIndex='2'; }}}
                     onMouseLeave={e => { e.currentTarget.style.transform='scale(1)'; e.currentTarget.style.boxShadow='none'; e.currentTarget.style.zIndex='auto'; }}
                   >
+                    {/* Row 1: day number + trade count badge */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <div style={{ fontSize: 11, fontWeight: 600, color: tc, opacity: .85 }}>{day}</div>
-                      {d && inRange && <div style={{ fontSize: 9.5, fontWeight: 700, color: tc, opacity: .75, background: 'rgba(0,0,0,.08)', borderRadius: 3, padding: '0px 3px', lineHeight: 1.5 }}>{d.tradeCount ?? 0}T</div>}
+                      {d && inRange && d.tradeCount > 0 && (
+                        <div style={{ fontSize: 8.5, fontWeight: 700, color: tc, opacity: .7, background: 'rgba(0,0,0,.09)', borderRadius: 3, padding: '1px 3px', lineHeight: 1.4, whiteSpace: 'nowrap' }}>
+                          {d.tradeCount} trade{d.tradeCount !== 1 ? 's' : ''}
+                        </div>
+                      )}
                     </div>
-                    {d && inRange && <>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: tc, marginTop: 2 }}>
-                        {d.netPnl >= 0 ? '+' : ''}{fmtR(d.netPnl)}
-                      </div>
-                      <div style={{ fontSize: 10, color: tc, opacity: .85 }}>
-                        {d.totalR >= 0 ? '+' : ''}{d.totalR?.toFixed(2)} R
-                      </div>
-                    </>}
+                    {/* Row 2: P&L */}
+                    {d && inRange && <div style={{ fontSize: 11, fontWeight: 700, color: tc, marginTop: 2 }}>
+                      {d.netPnl >= 0 ? '+' : ''}{fmtR(d.netPnl)}
+                    </div>}
+                    {/* Row 3: R value */}
+                    {d && inRange && <div style={{ fontSize: 10, color: tc, opacity: .85 }}>
+                      {d.totalR >= 0 ? '+' : ''}{d.totalR?.toFixed(2)} R
+                    </div>}
                   </div>
                 );
               })}
@@ -512,7 +518,7 @@ export default function DashboardPage() {
                       ['Win / Loss / BE', `${selDay.wins ?? 0} / ${selDay.losses ?? 0} / ${selDay.bes ?? 0}`, null],
                       ['Win Rate', `${selDay.winRate?.toFixed(2) ?? 0}%`, (selDay.winRate ?? 0) >= 50 ? '#16a34a' : '#dc2626'],
                       ['Total Win',  fmtR(selDay.totalWin  ?? 0), '#16a34a'],
-                      ['Total Loss', selDay.losses > 0 ? `-${fmtR(Math.abs(selDay.totalLoss ?? 0))}` : '₹0', '#dc2626'],
+                      ['Total Loss', selDay.losses > 0 ? `-${fmtR(Math.abs(selDay.totalLoss ?? 0))}` : `${sym}0`, '#dc2626'],
                       ['Net P&L', `${selDay.netPnl >= 0 ? '+' : ''}${fmtR(selDay.netPnl)}`, cls(selDay.netPnl)],
                       ['Trades', selDay.tradeCount ?? 0, null],
                     ].map(([k, v, c]) => (
@@ -559,9 +565,27 @@ export default function DashboardPage() {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false}/>
-                  <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} interval="preserveStartEnd"/>
+                  <XAxis dataKey="date" tick={{ fontSize: 9.5, fill: '#94a3b8' }} axisLine={false} tickLine={false}
+                    interval={0} angle={growthChart.length > 14 ? -35 : 0} textAnchor={growthChart.length > 14 ? 'end' : 'middle'}
+                    height={growthChart.length > 14 ? 36 : 20}/>
                   <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickCount={6}
-                    tickFormatter={v => `₹${Math.abs(v) >= 1000 ? `${(v/1000).toFixed(0)}k` : v}`}/>
+                    tickFormatter={v => {
+                      if (showUSD) { const u = v/usdRate; return `$${Math.abs(u)>=1000?`${(u/1000).toFixed(0)}k`:u.toFixed(0)}`; }
+                      return `₹${Math.abs(v)>=1000?`${(v/1000).toFixed(0)}k`:v}`;
+                    }}/>
+                  <ReferenceLine y={0} stroke="#cbd5e1" strokeDasharray="4 3"/>
+                  <Tooltip
+                    formatter={v => [fmtR(v), 'Cumulative P&L']}
+                    contentStyle={{ borderRadius: 9, border: '1px solid #e2e8f0', fontSize: 12, boxShadow: '0 4px 12px rgba(0,0,0,.08)' }}
+                    labelStyle={{ fontSize: 12, fontWeight: 600 }}
+                    cursor={{ stroke: '#cbd5e1', strokeWidth: 1 }}/>
+                  <Area type="monotone" dataKey="val" stroke={data?.netPnl >= 0 ? '#16a34a' : '#dc2626'}
+                    strokeWidth={2.5} fill="url(#growthGrad)"
+                    dot={{ r: 3, fill: data?.netPnl >= 0 ? '#16a34a' : '#dc2626', strokeWidth: 0 }}
+                    activeDot={{ r: 5, strokeWidth: 2, stroke: '#fff' }}
+                    animationDuration={900}/>
+                </AreaChart>
+              </ResponsiveContainer>
                   <ReferenceLine y={0} stroke="#cbd5e1" strokeDasharray="4 3"/>
                   <Tooltip
                     formatter={v => [fmtR(v), 'Cumulative P&L']}
@@ -577,7 +601,7 @@ export default function DashboardPage() {
               {/* Bottom bar */}
               <div style={{ display: 'flex', gap: 0, marginTop: 10, paddingTop: 10, borderTop: '1px solid #f1f5f9' }}>
                 {[
-                  ['Starting Balance', '₹0.00', null],
+                  ['Starting Balance', fmtR(data?.startingBalance ?? 0), null],
                   ['Ending Balance',   fmtR(data?.endingBalance ?? 0), null],
                   ['Net P&L',          fmtR(data?.netPnl ?? 0), cls(data?.netPnl)],
                   ['Change',           `${(data?.changePercent ?? 0) >= 0 ? '↑' : '↓'} ${Math.abs(data?.changePercent ?? 0).toFixed(1)}%`, cls(data?.netPnl)],
