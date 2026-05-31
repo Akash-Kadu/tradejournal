@@ -419,7 +419,7 @@ export default function DashboardPage() {
                 const inRange = isInRange(calYear, calMonth, day);
                 const bg  = d && inRange ? calCellBg(d.netPnl, maxAbs) : '#f8fafc';
                 const tc  = d && inRange ? calCellTxt(d.netPnl, maxAbs) : '#c4cdd6';
-                const bdr = d && inRange ? calCellBorder(d.netPnl, maxAbs) : '1px solid #e8edf2';
+                const bdr = inRange && d ? calCellBorder(d.netPnl, maxAbs) : inRange ? '1px solid #dde3ea' : '1px solid #eef1f4';
                 const isToday  = key === fmt8(today);
                 const isSel    = selected === day;
                 return (
@@ -583,17 +583,6 @@ export default function DashboardPage() {
                     strokeWidth={2.5} fill="url(#growthGrad)"
                     dot={{ r: 3, fill: data?.netPnl >= 0 ? '#16a34a' : '#dc2626', strokeWidth: 0 }}
                     activeDot={{ r: 5, strokeWidth: 2, stroke: '#fff' }}
-                    animationDuration={900}/>
-                </AreaChart>
-              </ResponsiveContainer>
-                  <ReferenceLine y={0} stroke="#cbd5e1" strokeDasharray="4 3"/>
-                  <Tooltip
-                    formatter={v => [fmtR(v), 'Cumulative P&L']}
-                    contentStyle={{ borderRadius: 9, border: '1px solid #e2e8f0', fontSize: 12, boxShadow: '0 4px 12px rgba(0,0,0,.08)' }}
-                    labelStyle={{ fontSize: 12, fontWeight: 600 }}
-                    cursor={{ stroke: '#cbd5e1', strokeWidth: 1 }}/>
-                  <Area type="monotone" dataKey="val" stroke={data?.netPnl >= 0 ? '#16a34a' : '#dc2626'}
-                    strokeWidth={2.5} fill="url(#growthGrad)" dot={false} activeDot={{ r: 4, strokeWidth: 2 }}
                     animationDuration={900}/>
                 </AreaChart>
               </ResponsiveContainer>
