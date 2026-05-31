@@ -232,6 +232,9 @@ export default function DashboardPage() {
             <p style={{ fontSize:13, color:'#64748b', marginTop:3 }}>Here's your trading performance overview.</p>
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
+            <span style={{ fontSize:11, color:'#94a3b8', background:'#f8fafc', border:'1px solid #e2e8f0', borderRadius:6, padding:'3px 8px' }}>
+              1$ ≈ ₹{usdRate.toFixed(1)}
+            </span>
             <CurrencyToggle currency={currency} onChange={setCurrency}/>
             <div style={{ display:'flex', alignItems:'center', gap:6, background:'#fff', border:'1px solid #e2e8f0', borderRadius:9, padding:'6px 12px', fontSize:12.5, boxShadow:'0 1px 3px rgba(0,0,0,.05)' }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -243,77 +246,111 @@ export default function DashboardPage() {
         </div>
 
         {/* ── Stats row ───────────────────────────────────────── */}
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr 1fr 1.2fr', gap:10, marginBottom:14, ...fadeIn }}>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr 1fr 1.4fr', gap:10, marginBottom:14, ...fadeIn }}>
 
           {/* Net P&L */}
-          <div className="stat-hover" style={{ background:'#fff', border:'1px solid #e2e8f0', borderRadius:10, padding:'12px 14px', boxShadow:'0 1px 3px rgba(0,0,0,.05)', transition:'box-shadow .2s, transform .2s' }}>
-            <div style={{ fontSize:10.5, fontWeight:600, color:'#64748b', textTransform:'uppercase', letterSpacing:'.05em', marginBottom:4 }}>Net P&L</div>
-            <div style={{ fontSize:19, fontWeight:700 }}>
+          <div className="stat-hover" style={{ background:'#fff', border:'1px solid #e2e8f0', borderRadius:10, padding:'11px 13px', boxShadow:'0 1px 3px rgba(0,0,0,.05)', transition:'box-shadow .2s, transform .2s', display:'flex', flexDirection:'column' }}>
+            <div style={{ fontSize:10, fontWeight:700, color:'#64748b', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:3 }}>Net P&L</div>
+            <div style={{ fontSize:18, fontWeight:700, lineHeight:1.1 }}>
               <AnimNum value={conv(data?.netPnl)} prefix={sym} decimals={0}/>
             </div>
-            <div style={{ fontSize:10.5, color:'#94a3b8', marginTop:2 }}>vs 30 days</div>
-            <Sparkline data={growthChart} color={data?.netPnl>=0?'#16a34a':'#dc2626'} h={32}/>
+            <div style={{ fontSize:10, color: data?.netPnl >= 0 ? '#16a34a' : '#dc2626', marginTop:2 }}>
+              ↑ 0.0% vs 30 days
+            </div>
+            <div style={{ marginTop:'auto', paddingTop:6 }}>
+              <Sparkline data={growthChart} color={data?.netPnl>=0?'#16a34a':'#dc2626'} h={30}/>
+            </div>
           </div>
 
           {/* Trades */}
-          <div className="stat-hover" style={{ background:'#fff', border:'1px solid #e2e8f0', borderRadius:10, padding:'12px 14px', boxShadow:'0 1px 3px rgba(0,0,0,.05)', transition:'box-shadow .2s, transform .2s' }}>
-            <div style={{ fontSize:10.5, fontWeight:600, color:'#64748b', textTransform:'uppercase', letterSpacing:'.05em', marginBottom:4 }}>Trades</div>
-            <div style={{ fontSize:19, fontWeight:700, color:'#0f172a' }}>{data?.totalTrades??0}</div>
-            <div style={{ fontSize:10.5, color:'#94a3b8', marginTop:2 }}>Total</div>
-            <WLBar w={data?.wins} l={data?.losses} be={data?.bes}/>
+          <div className="stat-hover" style={{ background:'#fff', border:'1px solid #e2e8f0', borderRadius:10, padding:'11px 13px', boxShadow:'0 1px 3px rgba(0,0,0,.05)', transition:'box-shadow .2s, transform .2s', display:'flex', flexDirection:'column' }}>
+            <div style={{ fontSize:10, fontWeight:700, color:'#64748b', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:3 }}>Trades</div>
+            <div style={{ fontSize:18, fontWeight:700, color:'#0f172a', lineHeight:1.1 }}>{data?.totalTrades??0}</div>
+            <div style={{ fontSize:10, color:'#94a3b8', marginTop:2 }}>Total</div>
+            <div style={{ marginTop:'auto', paddingTop:6 }}>
+              <WLBar w={data?.wins} l={data?.losses} be={data?.bes}/>
+            </div>
           </div>
 
           {/* W/L/BE */}
-          <div className="stat-hover" style={{ background:'#fff', border:'1px solid #e2e8f0', borderRadius:10, padding:'12px 14px', boxShadow:'0 1px 3px rgba(0,0,0,.05)', transition:'box-shadow .2s, transform .2s' }}>
-            <div style={{ fontSize:10.5, fontWeight:600, color:'#64748b', textTransform:'uppercase', letterSpacing:'.05em', marginBottom:4 }}>W / L / BE</div>
-            <div style={{ fontSize:17, fontWeight:700 }}>
+          <div className="stat-hover" style={{ background:'#fff', border:'1px solid #e2e8f0', borderRadius:10, padding:'11px 13px', boxShadow:'0 1px 3px rgba(0,0,0,.05)', transition:'box-shadow .2s, transform .2s', display:'flex', flexDirection:'column' }}>
+            <div style={{ fontSize:10, fontWeight:700, color:'#64748b', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:3 }}>W / L / BE</div>
+            <div style={{ fontSize:17, fontWeight:700, lineHeight:1.1 }}>
               <span style={{ color:'#16a34a' }}>{data?.wins??0}</span>
               <span style={{ color:'#94a3b8', fontWeight:400 }}> / </span>
               <span style={{ color:'#dc2626' }}>{data?.losses??0}</span>
               <span style={{ color:'#94a3b8', fontWeight:400 }}> / </span>
               <span style={{ color:'#94a3b8' }}>{data?.bes??0}</span>
             </div>
-            <div style={{ fontSize:10.5, color:'#94a3b8', marginTop:2 }}>Total</div>
-            <WLBar w={data?.wins} l={data?.losses} be={data?.bes}/>
+            <div style={{ fontSize:10, color:'#94a3b8', marginTop:2 }}>Total</div>
+            <div style={{ marginTop:'auto', paddingTop:6 }}>
+              <WLBar w={data?.wins} l={data?.losses} be={data?.bes}/>
+            </div>
           </div>
 
           {/* Win Rate */}
-          <div className="stat-hover" style={{ background:'#fff', border:'1px solid #e2e8f0', borderRadius:10, padding:'12px 14px', boxShadow:'0 1px 3px rgba(0,0,0,.05)', display:'flex', alignItems:'center', justifyContent:'space-between', transition:'box-shadow .2s, transform .2s' }}>
-            <div>
-              <div style={{ fontSize:10.5, fontWeight:600, color:'#64748b', textTransform:'uppercase', letterSpacing:'.05em', marginBottom:4 }}>Win Rate</div>
-              <div style={{ fontSize:19, fontWeight:700, color:'#0f172a' }}>{data?.winRate?.toFixed(1)??0}%</div>
-              <div style={{ fontSize:10.5, color:'#94a3b8', marginTop:2 }}>↑ {data?.winRate?.toFixed(1)??0}%</div>
-            </div>
-            <Donut pct={data?.winRate??0}/>
-          </div>
-
-          {/* RR */}
-          <div className="stat-hover" style={{ background:'#fff', border:'1px solid #e2e8f0', borderRadius:10, padding:'12px 14px', boxShadow:'0 1px 3px rgba(0,0,0,.05)', transition:'box-shadow .2s, transform .2s' }}>
-            <div style={{ fontSize:10.5, fontWeight:600, color:'#64748b', textTransform:'uppercase', letterSpacing:'.05em', marginBottom:4 }}>RR (Risk Reward)</div>
-            <div style={{ fontSize:19, fontWeight:700, color:'#0f172a' }}>{data?.avgRR?.toFixed(2)??'0.00'} R</div>
-            <div style={{ fontSize:10.5, color:'#94a3b8', marginTop:2 }}>avg R</div>
-            <Sparkline data={growthChart} color="#2563eb" h={32}/>
-          </div>
-
-          {/* Summary stats */}
-          <div className="stat-hover" style={{ background:'#fff', border:'1px solid #e2e8f0', borderRadius:10, padding:'12px 14px', boxShadow:'0 1px 3px rgba(0,0,0,.05)', transition:'box-shadow .2s, transform .2s' }}>
-            {[
-              ['Days Win %', `${data?.daysWinPercent?.toFixed(1)??0}% (${data?.daysWin??0}/${data?.totalTradingDays??0})`, '#16a34a'],
-              ['Total Win / Loss', `${fmtM(data?.totalWin)} / ${fmtM(data?.totalLoss)}`, null],
-              ['Avg Win / Loss', `${fmtM(data?.avgWin)} / ${fmtM(data?.avgLoss)}`, null],
-              ['Biggest Win', fmtM(data?.biggestWin), '#16a34a'],
-              ['Biggest Loss', fmtM(data?.biggestLoss), '#dc2626'],
-            ].map(([k,v,c]) => (
-              <div key={k} style={{ display:'flex', justifyContent:'space-between', marginBottom:4, fontSize:11 }}>
-                <span style={{ color:'#64748b' }}>{k}</span>
-                <span style={{ fontWeight:600, color:c||'#0f172a' }}>{v}</span>
+          <div className="stat-hover" style={{ background:'#fff', border:'1px solid #e2e8f0', borderRadius:10, padding:'11px 13px', boxShadow:'0 1px 3px rgba(0,0,0,.05)', transition:'box-shadow .2s, transform .2s', display:'flex', flexDirection:'column' }}>
+            <div style={{ fontSize:10, fontWeight:700, color:'#64748b', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:3 }}>Win Rate</div>
+            <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between' }}>
+              <div>
+                <div style={{ fontSize:18, fontWeight:700, color:'#0f172a', lineHeight:1.1 }}>{data?.winRate?.toFixed(1)??0}%</div>
+                <div style={{ fontSize:10, color:'#16a34a', marginTop:2 }}>↑ {data?.winRate?.toFixed(1)??0}%</div>
               </div>
-            ))}
+              <Donut pct={data?.winRate??0} size={46}/>
+            </div>
+            <div style={{ marginTop:'auto', paddingTop:4 }}>
+              <Sparkline data={growthChart} color="#16a34a" h={22}/>
+            </div>
+          </div>
+
+          {/* RR (Risk Reward) */}
+          <div className="stat-hover" style={{ background:'#fff', border:'1px solid #e2e8f0', borderRadius:10, padding:'11px 13px', boxShadow:'0 1px 3px rgba(0,0,0,.05)', transition:'box-shadow .2s, transform .2s', display:'flex', flexDirection:'column' }}>
+            <div style={{ fontSize:10, fontWeight:700, color:'#64748b', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:3 }}>RR (Risk Reward)</div>
+            <div style={{ fontSize:18, fontWeight:700, color:'#0f172a', lineHeight:1.1 }}>{data?.avgRR?.toFixed(2)??'0.00'} R</div>
+            <div style={{ fontSize:10, color:'#94a3b8', marginTop:2 }}>avg R</div>
+            <div style={{ marginTop:'auto', paddingTop:6 }}>
+              <Sparkline data={growthChart} color="#2563eb" h={30}/>
+            </div>
+          </div>
+
+          {/* Summary stats — two columns matching image */}
+          <div className="stat-hover" style={{ background:'#fff', border:'1px solid #e2e8f0', borderRadius:10, padding:'11px 13px', boxShadow:'0 1px 3px rgba(0,0,0,.05)', transition:'box-shadow .2s, transform .2s' }}>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'2px 12px' }}>
+              <div>
+                {[
+                  ['Days Win %',      `${data?.daysWinPercent?.toFixed(1)??0}% (${data?.daysWin??0}/${data?.totalTradingDays??0})`, '#16a34a'],
+                  ['Total Win / Loss', `${fmtM(data?.totalWin)} / -${fmtM(Math.abs(data?.totalLoss??0))}`, null],
+                  ['Avg Win / Loss',   `${fmtM(data?.avgWin)} / -${fmtM(Math.abs(data?.avgLoss??0))}`, null],
+                ].map(([k,v,c]) => (
+                  <div key={k} style={{ marginBottom:5 }}>
+                    <div style={{ fontSize:9.5, color:'#94a3b8', display:'flex', alignItems:'center', gap:4 }}>
+                      <span style={{ width:6, height:6, borderRadius:'50%', background:'#94a3b8', display:'inline-block', flexShrink:0 }}/>
+                      {k}
+                    </div>
+                    <div style={{ fontSize:11, fontWeight:600, color:c||'#0f172a', marginLeft:10 }}>{v}</div>
+                  </div>
+                ))}
+              </div>
+              <div>
+                {[
+                  ['Biggest Win',  fmtM(data?.biggestWin),  '#16a34a'],
+                  ['Biggest Loss', fmtM(data?.biggestLoss), '#dc2626'],
+                ].map(([k,v,c]) => (
+                  <div key={k} style={{ marginBottom:5 }}>
+                    <div style={{ fontSize:9.5, color:'#94a3b8', display:'flex', alignItems:'center', gap:4 }}>
+                      <span style={{ width:6, height:6, borderRadius:'50%', background:c, display:'inline-block', flexShrink:0 }}/>
+                      {k}
+                    </div>
+                    <div style={{ fontSize:11, fontWeight:600, color:c, marginLeft:10 }}>{v}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
         {/* ── Calendar + Right Panel ──────────────────────────── */}
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 340px', gap:12, ...fadeIn, transitionDelay:'.1s' }}>
+        <div style={{ display:'grid', gridTemplateColumns:'0.9fr 340px', gap:12, ...fadeIn, transitionDelay:'.1s' }}>
 
           {/* Calendar */}
           <div style={{ background:'#fff', border:'1px solid #e2e8f0', borderRadius:10, padding:'13px 14px', boxShadow:'0 1px 3px rgba(0,0,0,.05)' }}>
@@ -341,7 +378,7 @@ export default function DashboardPage() {
             {/* Cells — 10% smaller, gap 5px, only show in range */}
             <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:5 }}>
               {cells.map((day, idx) => {
-                if (!day) return <div key={idx} style={{ minHeight:52, background:'#f8fafc', borderRadius:5 }}/>;
+                if (!day) return <div key={idx} style={{ aspectRatio:'1/1', background:'#f8fafc', borderRadius:5 }}/>;
                 const key = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
                 const withinRange = inRange(day);
                 const d   = calMap[key];
@@ -352,22 +389,28 @@ export default function DashboardPage() {
                   <div key={idx}
                     onClick={() => withinRange && d && setSelected(selected===day?null:day)}
                     style={{
-                      minHeight:52, borderRadius:5, padding:'4px 5px',
+                      aspectRatio:'1/1', borderRadius:5, padding:'3px 4px',
                       background:bg,
                       cursor:(withinRange && d) ? 'pointer' : 'default',
                       border: isToday ? '2px solid #2563eb' : selected===day ? '2px solid #2563eb' : '2px solid transparent',
                       transition:'transform .15s, box-shadow .15s',
                       opacity: withinRange ? 1 : 0.4,
+                      display:'flex', flexDirection:'column',
                     }}
                     onMouseEnter={e => { if(withinRange&&d){ e.currentTarget.style.transform='scale(1.05)'; e.currentTarget.style.boxShadow='0 2px 8px rgba(0,0,0,.12)'; }}}
                     onMouseLeave={e => { e.currentTarget.style.transform='scale(1)'; e.currentTarget.style.boxShadow='none'; }}
                   >
-                    <div style={{ fontSize:10.5, fontWeight:600, color:tc, opacity:.85 }}>{day}</div>
+                    {withinRange && d && (
+                      <div style={{ fontSize:8, fontWeight:600, color:tc, opacity:.75, lineHeight:1, marginBottom:1 }}>
+                        {d.tradeCount ?? d.totalTrades ?? 0} trades
+                      </div>
+                    )}
+                    <div style={{ fontSize:10, fontWeight:600, color:tc, opacity:.85 }}>{day}</div>
                     {withinRange && d && <>
-                      <div style={{ fontSize:10.5, fontWeight:700, color:tc, marginTop:2, lineHeight:1.2 }}>
+                      <div style={{ fontSize:9.5, fontWeight:700, color:tc, marginTop:1, lineHeight:1.2 }}>
                         {d.netPnl>=0?'+':''}{fmtM(d.netPnl)}
                       </div>
-                      <div style={{ fontSize:9.5, color:tc, opacity:.85 }}>
+                      <div style={{ fontSize:8.5, color:tc, opacity:.85 }}>
                         {d.totalR>=0?'+':''}{d.totalR?.toFixed(2)} R
                       </div>
                     </>}
@@ -378,7 +421,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Right column: Summary + Growth chart */}
-          <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+          <div style={{ display:'flex', flexDirection:'column', gap:12, flex:1 }}>
 
             {/* Summary panel */}
             <div style={{ background:'#fff', border:'1px solid #e2e8f0', borderRadius:10, padding:'14px 16px', boxShadow:'0 1px 3px rgba(0,0,0,.05)' }}>
