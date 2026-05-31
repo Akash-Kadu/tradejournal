@@ -40,24 +40,26 @@ export default function Sidebar() {
     }}>
 
       {/* ── Logo + hamburger ── */}
-      <div style={{ padding: '14px 12px', display: 'flex', alignItems: 'center', gap: 8, borderBottom: '1px solid #f1f5f9', minHeight: 60, flexShrink: 0 }}>
-        <div style={{
-          width: 32, height: 32, borderRadius: 9, flexShrink: 0,
-          background: 'linear-gradient(135deg,#2563eb,#16a34a)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: '#fff', fontWeight: 800, fontSize: 13, letterSpacing: '-.5px',
-          boxShadow: '0 2px 8px rgba(37,99,235,.35)',
-        }}>TJ</div>
+      <div style={{ padding: '14px 12px', display: 'flex', alignItems: 'center', gap: collapsed ? 0 : 8, borderBottom: '1px solid #f1f5f9', minHeight: 60, flexShrink: 0, justifyContent: collapsed ? 'center' : 'flex-start' }}>
 
         {!collapsed && (
-          <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-            <div style={{ fontWeight: 700, fontSize: 13.5, color: '#0f172a', lineHeight: 1.15, whiteSpace: 'nowrap' }}>TradeJournal</div>
-            <div style={{ fontSize: 9.5, color: '#94a3b8', marginTop: 1, whiteSpace: 'nowrap' }}>Track. Analyse. Improve.</div>
-          </div>
+          <>
+            <div style={{
+              width: 32, height: 32, borderRadius: 9, flexShrink: 0,
+              background: 'linear-gradient(135deg,#2563eb,#16a34a)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#fff', fontWeight: 800, fontSize: 13, letterSpacing: '-.5px',
+              boxShadow: '0 2px 8px rgba(37,99,235,.35)',
+            }}>TJ</div>
+            <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+              <div style={{ fontWeight: 700, fontSize: 13.5, color: '#0f172a', lineHeight: 1.15, whiteSpace: 'nowrap' }}>TradeJournal</div>
+              <div style={{ fontSize: 9.5, color: '#94a3b8', marginTop: 1, whiteSpace: 'nowrap' }}>Track. Analyse. Improve.</div>
+            </div>
+          </>
         )}
 
         <button onClick={toggle}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '5px', borderRadius: 7, color: '#64748b', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background .15s, color .15s', marginLeft: collapsed ? 'auto' : 0 }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px', borderRadius: 7, color: '#64748b', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background .15s, color .15s' }}
           onMouseEnter={e => { e.currentTarget.style.background='#f1f5f9'; e.currentTarget.style.color='#0f172a'; }}
           onMouseLeave={e => { e.currentTarget.style.background='none'; e.currentTarget.style.color='#64748b'; }}
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
