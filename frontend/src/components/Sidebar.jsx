@@ -36,30 +36,39 @@ export default function Sidebar() {
       borderRight: '1px solid #e2e8f0', display: 'flex',
       flexDirection: 'column', position: 'sticky', top: 0,
       boxShadow: '1px 0 10px rgba(0,0,0,.05)', zIndex: 10,
-      transition: 'width .22s cubic-bezier(.4,0,.2,1)', overflow: 'hidden', flexShrink: 0,
+      transition: 'width .22s cubic-bezier(.4,0,.2,1)', overflow: 'visible', flexShrink: 0,
     }}>
 
       {/* ── Logo + hamburger ── */}
-      <div style={{ padding: '14px 12px', display: 'flex', alignItems: 'center', gap: collapsed ? 0 : 8, borderBottom: '1px solid #f1f5f9', minHeight: 60, flexShrink: 0, justifyContent: collapsed ? 'center' : 'flex-start' }}>
+      <div style={{ padding: '14px 12px', display: 'flex', alignItems: 'center', borderBottom: '1px solid #f1f5f9', minHeight: 60, flexShrink: 0, position: 'relative', overflow: 'hidden' }}>
 
-        {!collapsed && (
-          <>
-            <div style={{
-              width: 32, height: 32, borderRadius: 9, flexShrink: 0,
-              background: 'linear-gradient(135deg,#2563eb,#16a34a)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#fff', fontWeight: 800, fontSize: 13, letterSpacing: '-.5px',
-              boxShadow: '0 2px 8px rgba(37,99,235,.35)',
-            }}>TJ</div>
-            <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-              <div style={{ fontWeight: 700, fontSize: 13.5, color: '#0f172a', lineHeight: 1.15, whiteSpace: 'nowrap' }}>TradeJournal</div>
-              <div style={{ fontSize: 9.5, color: '#94a3b8', marginTop: 1, whiteSpace: 'nowrap' }}>Track. Analyse. Improve.</div>
-            </div>
-          </>
-        )}
+        {/* Logo — always rendered, hidden when collapsed */}
+        <div style={{
+          width: 32, height: 32, borderRadius: 9, flexShrink: 0,
+          background: 'linear-gradient(135deg,#2563eb,#16a34a)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: '#fff', fontWeight: 800, fontSize: 13, letterSpacing: '-.5px',
+          boxShadow: '0 2px 8px rgba(37,99,235,.35)',
+          opacity: collapsed ? 0 : 1, transition: 'opacity .2s',
+          pointerEvents: 'none',
+        }}>TJ</div>
 
+        <div style={{ flex: 1, minWidth: 0, overflow: 'hidden', opacity: collapsed ? 0 : 1, transition: 'opacity .15s', marginLeft: 8 }}>
+          <div style={{ fontWeight: 700, fontSize: 13.5, color: '#0f172a', lineHeight: 1.15, whiteSpace: 'nowrap' }}>TradeJournal</div>
+          <div style={{ fontSize: 9.5, color: '#94a3b8', marginTop: 1, whiteSpace: 'nowrap' }}>Track. Analyse. Improve.</div>
+        </div>
+
+        {/* Hamburger — always visible, absolutely positioned when collapsed */}
         <button onClick={toggle}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px', borderRadius: 7, color: '#64748b', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background .15s, color .15s' }}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer', padding: '6px',
+            borderRadius: 7, color: '#64748b', flexShrink: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'background .15s, color .15s',
+            position: collapsed ? 'absolute' : 'relative',
+            left: collapsed ? '50%' : 'auto',
+            transform: collapsed ? 'translateX(-50%)' : 'none',
+          }}
           onMouseEnter={e => { e.currentTarget.style.background='#f1f5f9'; e.currentTarget.style.color='#0f172a'; }}
           onMouseLeave={e => { e.currentTarget.style.background='none'; e.currentTarget.style.color='#64748b'; }}
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
