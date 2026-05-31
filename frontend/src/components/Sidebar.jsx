@@ -13,58 +13,70 @@ const NAV = [
 export default function Sidebar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const initials = user?.fullName?.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'U';
+  const initials = user?.fullName?.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase() || 'U';
 
   return (
     <aside style={{
-      width: 168, minHeight: '100vh', background: '#fff',
-      borderRight: '1px solid #e2e8f0', display: 'flex',
-      flexDirection: 'column', position: 'sticky', top: 0,
-      boxShadow: '1px 0 8px rgba(0,0,0,.04)', zIndex: 10,
+      width: 185,
+      height: '100vh',
+      position: 'sticky',
+      top: 0,
+      overflowY: 'auto',
+      background: '#fff',
+      borderRight: '1px solid #e2e8f0',
+      display: 'flex',
+      flexDirection: 'column',
+      boxShadow: '1px 0 8px rgba(0,0,0,.04)',
+      zIndex: 10,
+      flexShrink: 0,
     }}>
       {/* Logo */}
-      <div style={{ padding: '16px 14px 18px', display: 'flex', alignItems: 'center', gap: 8, borderBottom: '1px solid #f1f5f9' }}>
+      <div style={{ padding: '18px 16px 20px', display: 'flex', alignItems: 'center', gap: 9, borderBottom: '1px solid #f1f5f9' }}>
         <div style={{
-          width: 30, height: 30, borderRadius: 8, flexShrink: 0,
+          width: 32, height: 32, borderRadius: 8, flexShrink: 0,
           background: 'linear-gradient(135deg,#2563eb,#16a34a)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           color: '#fff', fontWeight: 800, fontSize: 13,
         }}>TJ</div>
         <div>
-          <div style={{ fontWeight: 700, fontSize: 13, color: '#0f172a', lineHeight: 1.1 }}>TradeJournal</div>
-          <div style={{ fontSize: 9.5, color: '#94a3b8', marginTop: 1 }}>Track. Analyse. Improve.</div>
+          <div style={{ fontWeight: 700, fontSize: 13.5, color: '#0f172a', lineHeight: 1.1 }}>TradeJournal</div>
+          <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>Track. Analyse. Improve.</div>
         </div>
       </div>
 
       {/* Nav */}
-      <nav style={{ flex: 1, padding: '10px 8px' }}>
+      <nav style={{ flex: 1, padding: '12px 9px' }}>
         {NAV.map(({ to, label, icon }) => (
           <NavLink key={to} to={to} style={({ isActive }) => ({
-            display: 'flex', alignItems: 'center', gap: 9,
-            padding: '7px 10px', borderRadius: 7, marginBottom: 2,
-            textDecoration: 'none', fontSize: 13, fontWeight: 500,
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '8.5px 11px',
+            borderRadius: 7, marginBottom: 3,
+            textDecoration: 'none',
+            fontSize: 15,
+            fontWeight: 500,
             color: isActive ? '#2563eb' : '#64748b',
             background: isActive ? '#eff6ff' : 'transparent',
             borderLeft: isActive ? '3px solid #2563eb' : '3px solid transparent',
             transition: 'all .15s ease',
           })}>
-            <span style={{ width: 15, height: 15, flexShrink: 0 }}>{icon}</span>
+            <span style={{ width: 16, height: 16, flexShrink: 0 }}>{icon}</span>
             {label}
           </NavLink>
         ))}
 
-        <div onClick={async () => { await logout(); navigate('/login'); }}
+        <div
+          onClick={async () => { await logout(); navigate('/login'); }}
           style={{
-            display: 'flex', alignItems: 'center', gap: 9,
-            padding: '7px 10px', borderRadius: 7, marginTop: 12,
-            cursor: 'pointer', fontSize: 13, fontWeight: 500,
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '8.5px 11px', borderRadius: 7, marginTop: 14,
+            cursor: 'pointer', fontSize: 15, fontWeight: 500,
             color: '#64748b', borderLeft: '3px solid transparent',
             transition: 'all .15s',
           }}
           onMouseEnter={e => e.currentTarget.style.background = '#fef2f2'}
           onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
         >
-          <span style={{ width: 15, height: 15 }}>
+          <span style={{ width: 16, height: 16 }}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
               <polyline points="16 17 21 12 16 7"/>
@@ -76,16 +88,16 @@ export default function Sidebar() {
       </nav>
 
       {/* User */}
-      <div style={{ padding: '10px 8px', borderTop: '1px solid #f1f5f9' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px', borderRadius: 7, cursor: 'pointer' }}>
+      <div style={{ padding: '11px 9px', borderTop: '1px solid #f1f5f9' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '7px 9px', borderRadius: 7 }}>
           <div style={{
-            width: 28, height: 28, borderRadius: '50%', background: '#2563eb',
+            width: 30, height: 30, borderRadius: '50%', background: '#2563eb',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#fff', fontWeight: 700, fontSize: 11, flexShrink: 0,
+            color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0,
           }}>{initials}</div>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.fullName}</div>
-            <div style={{ fontSize: 10, color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.email}</div>
+            <div style={{ fontSize: 12.5, fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.fullName}</div>
+            <div style={{ fontSize: 10.5, color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.email}</div>
           </div>
         </div>
       </div>
