@@ -133,7 +133,7 @@ export default function DashboardPage() {
   const [selected,  setSelected]  = useState(today.getDate());
   const [chartMode, setChartMode] = useState('Days');
   const [loaded,    setLoaded]    = useState(false);
-  const [showUSD,   setShowUSD]   = useState(false);
+  const [showUSD,   setShowUSD]   = useState(true);
   const [usdRate,   setUsdRate]   = useState(84); // fallback rate
 
   /* fetch live USD/INR rate */
@@ -384,12 +384,10 @@ export default function DashboardPage() {
             onMouseLeave={e => e.currentTarget.style.boxShadow='0 1px 4px rgba(0,0,0,.06)'}>
             {/* Calendar header */}
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
-              {/* Left: title + info */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                 <span style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>Trading Calendar</span>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
               </div>
-              {/* Center: prev, month, next, dropdown */}
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
                 <button onClick={() => { const d = new Date(calYear, calMonth-1); setCalYear(d.getFullYear()); setCalMonth(d.getMonth()); }}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '3px 7px', borderRadius: 6, color: '#64748b', fontSize: 17, lineHeight: 1, transition: 'background .15s' }}
@@ -408,15 +406,14 @@ export default function DashboardPage() {
                     const en = fmt(now); let s = en;
                     if (v==='all') s='2000-01-01';
                     else if (v==='ytd') s=now.getFullYear()+'-01-01';
-                    else if (v==='12m') { const d=new Date(now); d.setFullYear(d.getFullYear()-1); s=fmt(d); }
-                    else if (v==='6m')  { const d=new Date(now); d.setMonth(d.getMonth()-6); s=fmt(d); }
-                    else if (v==='3m')  { const d=new Date(now); d.setMonth(d.getMonth()-3); s=fmt(d); }
-                    else if (v==='1m')  { const d=new Date(now); d.setDate(1); s=fmt(d); }
-                    else if (v==='cw')  { const d=new Date(now); d.setDate(d.getDate()-d.getDay()); s=fmt(d); }
+                    else if (v==='12m') { const dt=new Date(now); dt.setFullYear(dt.getFullYear()-1); s=fmt(dt); }
+                    else if (v==='6m')  { const dt=new Date(now); dt.setMonth(dt.getMonth()-6); s=fmt(dt); }
+                    else if (v==='3m')  { const dt=new Date(now); dt.setMonth(dt.getMonth()-3); s=fmt(dt); }
+                    else if (v==='1m')  { const dt=new Date(now); dt.setDate(1); s=fmt(dt); }
+                    else if (v==='cw')  { const dt=new Date(now); dt.setDate(dt.getDate()-dt.getDay()); s=fmt(dt); }
                     setStartDate(s); setEndDate(en); e.target.value='';
-                  }}
-                  defaultValue=
-                  style={{ appearance:'none', WebkitAppearance:'none', background:'#f8fafc url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%2394a3b8' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 7px center', border:'1px solid #e2e8f0', borderRadius:7, padding:'4px 24px 4px 9px', fontSize:11.5, fontWeight:600, color:'#475569', cursor:'pointer', outline:'none' }}>
+                  }} defaultValue=
+                  style={{ appearance:'none', WebkitAppearance:'none', border:'1px solid #e2e8f0', borderRadius:7, padding:'4px 24px 4px 9px', fontSize:11.5, fontWeight:600, color:'#475569', cursor:'pointer', outline:'none', background:'#f8fafc' }}>
                   <option value= disabled>Quick ▾</option>
                   <option value=all>All</option>
                   <option value=ytd>YTD</option>
@@ -427,7 +424,6 @@ export default function DashboardPage() {
                   <option value=cw>This Week</option>
                 </select>
               </div>
-              {/* Right: legend */}
               <div style={{ display: 'flex', gap: 10, fontSize: 11.5, color: '#64748b', flexShrink: 0 }}>
                 {[['#16a34a','Win'],['#dc2626','Loss'],['#94a3b8','BE']].map(([c,l]) => (
                   <span key={l} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -452,7 +448,7 @@ export default function DashboardPage() {
                 const inRange = isInRange(calYear, calMonth, day);
                 const bg  = d && inRange ? calCellBg(d.netPnl, maxAbs) : '#f8fafc';
                 const tc  = d && inRange ? calCellTxt(d.netPnl, maxAbs) : '#c4cdd6';
-                const bdr = d && inRange ? calCellBorder(d.netPnl, maxAbs) : '1px solid #e8edf2';
+                const bdr = inRange && d ? calCellBorder(d.netPnl, maxAbs) : inRange ? '1px solid #dde3ea' : '1px solid #eef1f4';
                 const isToday  = key === fmt8(today);
                 const isSel    = selected === day;
                 return (
@@ -616,17 +612,6 @@ export default function DashboardPage() {
                     strokeWidth={2.5} fill="url(#growthGrad)"
                     dot={{ r: 3, fill: data?.netPnl >= 0 ? '#16a34a' : '#dc2626', strokeWidth: 0 }}
                     activeDot={{ r: 5, strokeWidth: 2, stroke: '#fff' }}
-                    animationDuration={900}/>
-                </AreaChart>
-              </ResponsiveContainer>
-                  <ReferenceLine y={0} stroke="#cbd5e1" strokeDasharray="4 3"/>
-                  <Tooltip
-                    formatter={v => [fmtR(v), 'Cumulative P&L']}
-                    contentStyle={{ borderRadius: 9, border: '1px solid #e2e8f0', fontSize: 12, boxShadow: '0 4px 12px rgba(0,0,0,.08)' }}
-                    labelStyle={{ fontSize: 12, fontWeight: 600 }}
-                    cursor={{ stroke: '#cbd5e1', strokeWidth: 1 }}/>
-                  <Area type="monotone" dataKey="val" stroke={data?.netPnl >= 0 ? '#16a34a' : '#dc2626'}
-                    strokeWidth={2.5} fill="url(#growthGrad)" dot={false} activeDot={{ r: 4, strokeWidth: 2 }}
                     animationDuration={900}/>
                 </AreaChart>
               </ResponsiveContainer>
