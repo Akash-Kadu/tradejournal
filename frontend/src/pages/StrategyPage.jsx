@@ -338,12 +338,13 @@ export default function StrategyPage() {
   /* currency formatter */
   const fmt = v => {
     if (v == null) return usd ? '$0' : '₹0';
+    const sign = v < 0 ? '-' : '';
     const num = Math.abs(v);
     if (usd) {
       const converted = (num / rate).toFixed(2);
-      return `$${Number(converted).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+      return `${sign}$${Number(converted).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
     }
-    return `₹${num.toLocaleString('en-IN', { minimumFractionDigits: 0 })}`;
+    return `${sign}₹${num.toLocaleString('en-IN', { minimumFractionDigits: 0 })}`;
   };
 
   /* dynamic color theme based on totalEarned */
