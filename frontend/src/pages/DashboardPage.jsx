@@ -384,73 +384,51 @@ export default function DashboardPage() {
             onMouseLeave={e => e.currentTarget.style.boxShadow='0 1px 4px rgba(0,0,0,.06)'}>
             {/* Calendar header */}
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
-              {/* Left: title */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              {/* Left: title + info */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                 <span style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>Trading Calendar</span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
               </div>
-
-              {/* Center: prev | month + dropdown | next */}
+              {/* Center: prev, month, next, dropdown */}
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
                 <button onClick={() => { const d = new Date(calYear, calMonth-1); setCalYear(d.getFullYear()); setCalMonth(d.getMonth()); }}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '3px 7px', borderRadius: 6, color: '#64748b', fontSize: 17, lineHeight: 1, transition: 'background .15s' }}
                   onMouseEnter={e => e.currentTarget.style.background='#f1f5f9'}
                   onMouseLeave={e => e.currentTarget.style.background='none'}>‹</button>
-
                 <span style={{ fontWeight: 600, fontSize: 13.5, minWidth: 96, textAlign: 'center' }}>{MONTHS[calMonth]} {calYear}</span>
-
                 <button onClick={() => { const d = new Date(calYear, calMonth+1); setCalYear(d.getFullYear()); setCalMonth(d.getMonth()); }}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '3px 7px', borderRadius: 6, color: '#64748b', fontSize: 17, lineHeight: 1, transition: 'background .15s' }}
                   onMouseEnter={e => e.currentTarget.style.background='#f1f5f9'}
                   onMouseLeave={e => e.currentTarget.style.background='none'}>›</button>
-
-                {/* Quick range dropdown */}
-                <div style={{ position: 'relative', marginLeft: 4 }}>
-                  <select
-                    onChange={e => {
-                      const v = e.target.value;
-                      const now = new Date();
-                      const y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
-                      const pad = n => String(n).padStart(2,'0');
-                      const fmt = dt => `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}`;
-                      let s, en = fmt(now);
-                      if (v === 'all') { s = '2000-01-01'; }
-                      else if (v === 'ytd') { s = `${y}-01-01`; }
-                      else if (v === '12m') { const dt = new Date(now); dt.setFullYear(y-1); s = fmt(dt); }
-                      else if (v === '6m')  { const dt = new Date(now); dt.setMonth(m-6);   s = fmt(dt); }
-                      else if (v === '3m')  { const dt = new Date(now); dt.setMonth(m-3);   s = fmt(dt); }
-                      else if (v === '1m')  { s = `${y}-${pad(m+1)}-01`; }
-                      else if (v === 'cw')  { const dt = new Date(now); dt.setDate(d - now.getDay()); s = fmt(dt); }
-                      if (s) { setStartDate(s); setEndDate(en); }
-                    }}
-                    defaultValue=""
-                    style={{
-                      appearance: 'none', WebkitAppearance: 'none',
-                      background: '#f8fafc', border: '1px solid #e2e8f0',
-                      borderRadius: 7, padding: '4px 22px 4px 9px',
-                      fontSize: 11.5, fontWeight: 600, color: '#475569',
-                      cursor: 'pointer', outline: 'none',
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%2394a3b8' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E")`,
-                      backgroundRepeat: 'no-repeat', backgroundPosition: 'right 7px center',
-                      transition: 'border-color .15s',
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.borderColor='#94a3b8'}
-                    onMouseLeave={e => e.currentTarget.style.borderColor='#e2e8f0'}
-                  >
-                    <option value="" disabled>Range ▾</option>
-                    <option value="all">All</option>
-                    <option value="ytd">YTD</option>
-                    <option value="12m">12 Months</option>
-                    <option value="6m">6 Months</option>
-                    <option value="3m">3 Months</option>
-                    <option value="1m">1 Month</option>
-                    <option value="cw">Current Week</option>
-                  </select>
-                </div>
+                <select onChange={e => {
+                    const v = e.target.value; if (!v) return;
+                    const now = new Date();
+                    const pad = n => String(n).padStart(2,'0');
+                    const fmt = dt => dt.getFullYear()+'-'+pad(dt.getMonth()+1)+'-'+pad(dt.getDate());
+                    const en = fmt(now); let s = en;
+                    if (v==='all') s='2000-01-01';
+                    else if (v==='ytd') s=now.getFullYear()+'-01-01';
+                    else if (v==='12m') { const d=new Date(now); d.setFullYear(d.getFullYear()-1); s=fmt(d); }
+                    else if (v==='6m')  { const d=new Date(now); d.setMonth(d.getMonth()-6); s=fmt(d); }
+                    else if (v==='3m')  { const d=new Date(now); d.setMonth(d.getMonth()-3); s=fmt(d); }
+                    else if (v==='1m')  { const d=new Date(now); d.setDate(1); s=fmt(d); }
+                    else if (v==='cw')  { const d=new Date(now); d.setDate(d.getDate()-d.getDay()); s=fmt(d); }
+                    setStartDate(s); setEndDate(en); e.target.value='';
+                  }}
+                  defaultValue=
+                  style={{ appearance:'none', WebkitAppearance:'none', background:'#f8fafc url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%2394a3b8' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 7px center', border:'1px solid #e2e8f0', borderRadius:7, padding:'4px 24px 4px 9px', fontSize:11.5, fontWeight:600, color:'#475569', cursor:'pointer', outline:'none' }}>
+                  <option value= disabled>Quick ▾</option>
+                  <option value=all>All</option>
+                  <option value=ytd>YTD</option>
+                  <option value=12m>12 Months</option>
+                  <option value=6m>6 Months</option>
+                  <option value=3m>3 Months</option>
+                  <option value=1m>This Month</option>
+                  <option value=cw>This Week</option>
+                </select>
               </div>
-
               {/* Right: legend */}
-              <div style={{ display: 'flex', gap: 10, fontSize: 11.5, color: '#64748b' }}>
+              <div style={{ display: 'flex', gap: 10, fontSize: 11.5, color: '#64748b', flexShrink: 0 }}>
                 {[['#16a34a','Win'],['#dc2626','Loss'],['#94a3b8','BE']].map(([c,l]) => (
                   <span key={l} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     <span style={{ width: 7, height: 7, borderRadius: '50%', background: c, display: 'inline-block' }}/>
