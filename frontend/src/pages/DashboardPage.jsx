@@ -376,26 +376,81 @@ export default function DashboardPage() {
         </div>
 
         {/* ── Calendar + Right Panel ──────────────────────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 460px', gap: 12, ...fadeIn, transitionDelay: '.1s', alignItems: 'stretch' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 520px', gap: 12, ...fadeIn, transitionDelay: '.1s', alignItems: 'stretch' }}>
 
           {/* Calendar */}
           <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '14px 16px', boxShadow: '0 1px 4px rgba(0,0,0,.06)', transition: 'box-shadow .25s', display: 'flex', flexDirection: 'column' }}
             onMouseEnter={e => e.currentTarget.style.boxShadow='0 4px 16px rgba(0,0,0,.09)'}
             onMouseLeave={e => e.currentTarget.style.boxShadow='0 1px 4px rgba(0,0,0,.06)'}>
             {/* Calendar header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-              <span style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>Trading Calendar</span>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-              <button onClick={() => { const d = new Date(calYear, calMonth-1); setCalYear(d.getFullYear()); setCalMonth(d.getMonth()); }}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '3px 7px', borderRadius: 6, color: '#64748b', fontSize: 17, lineHeight: 1, marginLeft: 'auto', transition: 'background .15s' }}
-                onMouseEnter={e => e.currentTarget.style.background='#f1f5f9'}
-                onMouseLeave={e => e.currentTarget.style.background='none'}>‹</button>
-              <span style={{ fontWeight: 600, fontSize: 13.5, minWidth: 96, textAlign: 'center' }}>{MONTHS[calMonth]} {calYear}</span>
-              <button onClick={() => { const d = new Date(calYear, calMonth+1); setCalYear(d.getFullYear()); setCalMonth(d.getMonth()); }}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '3px 7px', borderRadius: 6, color: '#64748b', fontSize: 17, lineHeight: 1, transition: 'background .15s' }}
-                onMouseEnter={e => e.currentTarget.style.background='#f1f5f9'}
-                onMouseLeave={e => e.currentTarget.style.background='none'}>›</button>
-              <div style={{ display: 'flex', gap: 10, fontSize: 11.5, color: '#64748b', marginLeft: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
+              {/* Left: title */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>Trading Calendar</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              </div>
+
+              {/* Center: prev | month + dropdown | next */}
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                <button onClick={() => { const d = new Date(calYear, calMonth-1); setCalYear(d.getFullYear()); setCalMonth(d.getMonth()); }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '3px 7px', borderRadius: 6, color: '#64748b', fontSize: 17, lineHeight: 1, transition: 'background .15s' }}
+                  onMouseEnter={e => e.currentTarget.style.background='#f1f5f9'}
+                  onMouseLeave={e => e.currentTarget.style.background='none'}>‹</button>
+
+                <span style={{ fontWeight: 600, fontSize: 13.5, minWidth: 96, textAlign: 'center' }}>{MONTHS[calMonth]} {calYear}</span>
+
+                <button onClick={() => { const d = new Date(calYear, calMonth+1); setCalYear(d.getFullYear()); setCalMonth(d.getMonth()); }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '3px 7px', borderRadius: 6, color: '#64748b', fontSize: 17, lineHeight: 1, transition: 'background .15s' }}
+                  onMouseEnter={e => e.currentTarget.style.background='#f1f5f9'}
+                  onMouseLeave={e => e.currentTarget.style.background='none'}>›</button>
+
+                {/* Quick range dropdown */}
+                <div style={{ position: 'relative', marginLeft: 4 }}>
+                  <select
+                    onChange={e => {
+                      const v = e.target.value;
+                      const now = new Date();
+                      const y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
+                      const pad = n => String(n).padStart(2,'0');
+                      const fmt = dt => `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}`;
+                      let s, en = fmt(now);
+                      if (v === 'all') { s = '2000-01-01'; }
+                      else if (v === 'ytd') { s = `${y}-01-01`; }
+                      else if (v === '12m') { const dt = new Date(now); dt.setFullYear(y-1); s = fmt(dt); }
+                      else if (v === '6m')  { const dt = new Date(now); dt.setMonth(m-6);   s = fmt(dt); }
+                      else if (v === '3m')  { const dt = new Date(now); dt.setMonth(m-3);   s = fmt(dt); }
+                      else if (v === '1m')  { s = `${y}-${pad(m+1)}-01`; }
+                      else if (v === 'cw')  { const dt = new Date(now); dt.setDate(d - now.getDay()); s = fmt(dt); }
+                      if (s) { setStartDate(s); setEndDate(en); }
+                    }}
+                    defaultValue=""
+                    style={{
+                      appearance: 'none', WebkitAppearance: 'none',
+                      background: '#f8fafc', border: '1px solid #e2e8f0',
+                      borderRadius: 7, padding: '4px 22px 4px 9px',
+                      fontSize: 11.5, fontWeight: 600, color: '#475569',
+                      cursor: 'pointer', outline: 'none',
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%2394a3b8' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E")`,
+                      backgroundRepeat: 'no-repeat', backgroundPosition: 'right 7px center',
+                      transition: 'border-color .15s',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.borderColor='#94a3b8'}
+                    onMouseLeave={e => e.currentTarget.style.borderColor='#e2e8f0'}
+                  >
+                    <option value="" disabled>Range ▾</option>
+                    <option value="all">All</option>
+                    <option value="ytd">YTD</option>
+                    <option value="12m">12 Months</option>
+                    <option value="6m">6 Months</option>
+                    <option value="3m">3 Months</option>
+                    <option value="1m">1 Month</option>
+                    <option value="cw">Current Week</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Right: legend */}
+              <div style={{ display: 'flex', gap: 10, fontSize: 11.5, color: '#64748b' }}>
                 {[['#16a34a','Win'],['#dc2626','Loss'],['#94a3b8','BE']].map(([c,l]) => (
                   <span key={l} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     <span style={{ width: 7, height: 7, borderRadius: '50%', background: c, display: 'inline-block' }}/>
@@ -406,20 +461,20 @@ export default function DashboardPage() {
             </div>
 
             {/* Day headers */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 0.9fr))', gap: 5, marginBottom: 3 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 0.81fr))', gap: 5, marginBottom: 3 }}>
               {DAY_HDR.map(h => <div key={h} style={{ textAlign: 'center', fontSize: 12, fontWeight: 600, color: '#94a3b8', padding: '3px 0' }}>{h}</div>)}
             </div>
 
             {/* Cells */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 0.9fr))', gap: 5, flex: 1, gridAutoRows: '1fr' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 0.81fr))', gap: 5, flex: 1, gridAutoRows: '1fr' }}>
               {cells.map((day, idx) => {
-                if (!day) return <div key={idx} style={{ background: '#f8fafc', borderRadius: 7, border: '1px solid #e8edf2', minHeight: 58 }}/>;
+                if (!day) return <div key={idx} style={{ background: '#f8fafc', borderRadius: 7, border: '1px solid #e8edf2', minHeight: 61 }}/>;
                 const key = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
                 const d   = calMap[key];
                 const inRange = isInRange(calYear, calMonth, day);
                 const bg  = d && inRange ? calCellBg(d.netPnl, maxAbs) : '#f8fafc';
                 const tc  = d && inRange ? calCellTxt(d.netPnl, maxAbs) : '#c4cdd6';
-                const bdr = inRange && d ? calCellBorder(d.netPnl, maxAbs) : inRange ? '1px solid #dde3ea' : '1px solid #eef1f4';
+                const bdr = d && inRange ? calCellBorder(d.netPnl, maxAbs) : '1px solid #e8edf2';
                 const isToday  = key === fmt8(today);
                 const isSel    = selected === day;
                 return (
@@ -432,7 +487,7 @@ export default function DashboardPage() {
                       opacity: inRange ? 1 : 0,
                       pointerEvents: inRange ? 'auto' : 'none',
                       transition: 'transform .18s ease, box-shadow .18s ease',
-                      position: 'relative', minHeight: 58,
+                      position: 'relative', minHeight: 61,
                     }}
                     onMouseEnter={e => { if (d && inRange) { e.currentTarget.style.transform='scale(1.06)'; e.currentTarget.style.boxShadow='0 3px 10px rgba(0,0,0,.14)'; e.currentTarget.style.zIndex='2'; }}}
                     onMouseLeave={e => { e.currentTarget.style.transform='scale(1)'; e.currentTarget.style.boxShadow='none'; e.currentTarget.style.zIndex='auto'; }}
@@ -583,6 +638,17 @@ export default function DashboardPage() {
                     strokeWidth={2.5} fill="url(#growthGrad)"
                     dot={{ r: 3, fill: data?.netPnl >= 0 ? '#16a34a' : '#dc2626', strokeWidth: 0 }}
                     activeDot={{ r: 5, strokeWidth: 2, stroke: '#fff' }}
+                    animationDuration={900}/>
+                </AreaChart>
+              </ResponsiveContainer>
+                  <ReferenceLine y={0} stroke="#cbd5e1" strokeDasharray="4 3"/>
+                  <Tooltip
+                    formatter={v => [fmtR(v), 'Cumulative P&L']}
+                    contentStyle={{ borderRadius: 9, border: '1px solid #e2e8f0', fontSize: 12, boxShadow: '0 4px 12px rgba(0,0,0,.08)' }}
+                    labelStyle={{ fontSize: 12, fontWeight: 600 }}
+                    cursor={{ stroke: '#cbd5e1', strokeWidth: 1 }}/>
+                  <Area type="monotone" dataKey="val" stroke={data?.netPnl >= 0 ? '#16a34a' : '#dc2626'}
+                    strokeWidth={2.5} fill="url(#growthGrad)" dot={false} activeDot={{ r: 4, strokeWidth: 2 }}
                     animationDuration={900}/>
                 </AreaChart>
               </ResponsiveContainer>
