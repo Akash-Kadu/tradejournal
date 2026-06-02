@@ -283,7 +283,7 @@ export default function StrategyPage() {
   const [name,     setName]     = useState('');
   const [toast,    setToast]    = useState(null);
   const [loading,  setLoading]  = useState(false);
-  const [usd,      setUsd]      = useState(false);
+  const [usd,      setUsd]      = useState(true);
   const [rate,     setRate]     = useState(DEFAULT_RATE);
   const [fetching, setFetching] = useState(true);
   const { user } = useAuth();
@@ -346,6 +346,20 @@ export default function StrategyPage() {
     return `₹${num.toLocaleString('en-IN', { minimumFractionDigits: 0 })}`;
   };
 
+  /* dynamic color theme based on totalEarned */
+  const theme = (earned) => {
+    const pos = earned == null || earned >= 0;
+    return {
+      cardIcon:     { background: pos ? '#f0fdf4' : '#fff2f2', color: pos ? '#16a34a' : '#dc2626' },
+      badge:        { background: pos ? '#f0fdf4' : '#fff2f2', color: pos ? '#16a34a' : '#dc2626', border: `1px solid ${pos ? '#bbf7d0' : '#fecaca'}` },
+      totalSection: { borderColor: pos ? '#bbf7d0' : '#fecaca', background: pos ? '#f8fffe' : '#fff8f8', boxShadow: pos ? '0 1px 6px rgba(22,163,74,.07)' : '0 1px 6px rgba(220,38,38,.07)' },
+      secTitle:     { color: pos ? '#4ade80' : '#f87171' },
+      secTitleIcon: { background: pos ? '#dcfce7' : '#fee2e2', color: pos ? '#22c55e' : '#ef4444' },
+      earnedTotal:  { color: pos ? '#16a34a' : '#dc2626', borderTopColor: pos ? '#bbf7d0' : '#fecaca' },
+      toggleTrack:  pos ? '#22c55e' : '#ef4444',
+    };
+  };
+
   return (
     <div className="layout sp-wrap">
       <Sidebar />
@@ -392,19 +406,21 @@ export default function StrategyPage() {
             </div>
           )}
 
-          {!fetching && stats.map((s, idx) => (
+          {!fetching && stats.map((s, idx) => {
+            const t = theme(s.totalEarned);
+            return (
             <div key={s.srNo} className="sp-card" style={{ animationDelay: `${idx * 0.08 + 0.04}s` }}>
 
               {/* Card header */}
               <div className="sp-card-header">
-                <div className="sp-card-icon">
+                <div className="sp-card-icon" style={t.cardIcon}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
                     <polyline points="17 6 23 6 23 12"/>
                   </svg>
                 </div>
                 <h3 className="sp-card-name">{s.strategyName}</h3>
-                <span className="sp-badge">Active</span>
+                <span className="sp-badge" style={t.badge}>Active</span>
                 <button
                   className="sp-del-btn"
                   onClick={() => handleDelete(s.srNo)}
@@ -423,9 +439,9 @@ export default function StrategyPage() {
               <div className="sp-sections">
 
                 {/* ── Total Summary (highlighted) ── */}
-                <div className="sp-section sp-section--total">
-                  <div className="sp-sec-title">
-                    <span className="sp-sec-title-icon">
+                <div className="sp-section sp-section--total" style={t.totalSection}>
+                  <div className="sp-sec-title" style={t.secTitle}>
+                    <span className="sp-sec-title-icon" style={t.secTitleIcon}>
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <rect x="3" y="3" width="7" height="7" rx="1"/>
                         <rect x="14" y="3" width="7" height="7" rx="1"/>
@@ -451,7 +467,7 @@ export default function StrategyPage() {
                     <span className="sp-stat-key">Avg RR</span>
                     <span className="sp-stat-val">{s.avgRR?.toFixed(2) ?? '—'}</span>
                   </div>
-                  <div className="sp-earned-footer">
+                  <div className="sp-earned-footer" style={t.earnedTotal}>
                     Earned: {fmt(s.totalEarned)}
                   </div>
                 </div>
@@ -491,7 +507,8 @@ export default function StrategyPage() {
 
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Add Strategy button */}
