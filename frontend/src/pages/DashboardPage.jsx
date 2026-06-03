@@ -10,9 +10,114 @@ import api        from '../services/api';
 
 const today       = new Date();
 const startOfYear = new Date(today.getFullYear(), 0, 1); // Jan 1 of current year = YTD
-const fmt8         = d => d.toISOString().split('T')[0];
-const MONTHS    = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-const DAY_HDR   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const fmt8        = d => d instanceof Date ? d.toISOString().split('T')[0] : d;
+const MONTHS      = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DAY_HDR     = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+/* ── Inject CSS once (same pattern as TradesPage) ───────────────── */
+const injectStyles = () => {
+  if (document.getElementById('dp-styles')) return;
+  const s = document.createElement('style');
+  s.id = 'dp-styles';
+  s.textContent = `
+    .dp-date-wrap {
+      display:flex; align-items:center; gap:6px;
+      background:#fff; border:1px solid #e2e8f0; border-radius:8px;
+      padding:6px 12px; font-size:12.5px; cursor:pointer; position:relative;
+      transition:border-color .15s;
+    }
+    .dp-date-wrap:hover { border-color:#cbd5e1; }
+    .dp-date-panel {
+      position:absolute; top:calc(100% + 6px); right:0;
+      background:#fff; border:1px solid #e2e8f0; border-radius:12px;
+      box-shadow:0 8px 28px rgba(0,0,0,.13); z-index:200;
+      padding:13px 14px; min-width:310px;
+      animation:dpFadeDown .18s ease;
+    }
+    @keyframes dpFadeDown {
+      from { opacity:0; transform:translateY(-6px); }
+      to   { opacity:1; transform:none; }
+    }
+    .dp-quick-btns { display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap; }
+    .dp-quick-btn {
+      padding:4px 11px; border-radius:99px; font-size:12px; font-weight:600;
+      border:1.5px solid #e2e8f0; background:#f8fafc; color:#374151;
+      cursor:pointer; transition:all .15s;
+    }
+    .dp-quick-btn:hover { border-color:#2563eb; background:#eff6ff; color:#2563eb; }
+    .dp-quick-btn.active { border-color:#2563eb; background:#eff6ff; color:#2563eb; }
+    .dp-date-inputs { display:flex; align-items:center; gap:8px; }
+    .dp-date-inputs input {
+      border:1.5px solid #e2e8f0; border-radius:8px; padding:6px 10px;
+      font-size:12.5px; font-family:inherit; outline:none; flex:1;
+      transition:border-color .2s;
+    }
+    .dp-date-inputs input:focus { border-color:#2563eb; }
+  `;
+  document.head.appendChild(s);
+};
+
+/* ── DateRangePicker — identical pattern to TradesPage ──────────── */
+function DateRangePicker({ startDate, endDate, onStart, onEnd }) {
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState('ytd');
+  const ref = useRef();
+
+  useEffect(() => {
+    const handler = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const applyRange = (key, s, e) => {
+    setActive(key);
+    onStart(s);
+    onEnd(e);
+    // keep panel open so user sees the selection
+  };
+
+  const pad = n => String(n).padStart(2, '0');
+  const fmtD = dt => `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}`;
+  const now = new Date();
+  const todayStr = fmtD(now);
+
+  const quickRanges = [
+    { key:'cw',  label:'This Week',    fn:() => { const d=new Date(now); d.setDate(now.getDate()-(now.getDay()===0?6:now.getDay()-1)); applyRange('cw', fmtD(d), todayStr); }},
+    { key:'1m',  label:'This Month',   fn:() => { applyRange('1m', `${now.getFullYear()}-${pad(now.getMonth()+1)}-01`, todayStr); }},
+    { key:'3m',  label:'Past 3 Months',fn:() => { const d=new Date(now); d.setMonth(d.getMonth()-3); applyRange('3m', fmtD(d), todayStr); }},
+    { key:'6m',  label:'6 Months',     fn:() => { const d=new Date(now); d.setMonth(d.getMonth()-6); applyRange('6m', fmtD(d), todayStr); }},
+    { key:'1yr', label:'1 Year',       fn:() => { const d=new Date(now); d.setFullYear(d.getFullYear()-1); applyRange('1yr', fmtD(d), todayStr); }},
+    { key:'ytd', label:'YTD',          fn:() => { applyRange('ytd', `${now.getFullYear()}-01-01`, todayStr); }},
+    { key:'all', label:'All Time',     fn:() => { applyRange('all', '2000-01-01', todayStr); }},
+  ];
+
+  const ds = startDate ? startDate.slice(5).replace('-','/') : '—';
+  const de = endDate   ? endDate.slice(5).replace('-','/')   : '—';
+
+  return (
+    <div style={{ position:'relative' }} ref={ref}>
+      <div className="dp-date-wrap" onClick={() => setOpen(o => !o)}>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span style={{ fontSize:12.5, color:'#374151', fontWeight:500, whiteSpace:'nowrap' }}>{ds} – {de}</span>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      {open && (
+        <div className="dp-date-panel">
+          <div className="dp-quick-btns">
+            {quickRanges.map(r => (
+              <span key={r.key} className={`dp-quick-btn${active===r.key?' active':''}`} onClick={r.fn}>{r.label}</span>
+            ))}
+          </div>
+          <div className="dp-date-inputs">
+            <input type="date" value={startDate} onChange={e => { onStart(e.target.value); setActive(''); }}/>
+            <span style={{ color:'#94a3b8', fontSize:13 }}>–</span>
+            <input type="date" value={endDate} onChange={e => { onEnd(e.target.value); setActive(''); }}/>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 /* ── Colour helpers ──────────────────────────────────────────────── */
 const BE_THRESHOLD = 10;
@@ -127,6 +232,19 @@ export default function DashboardPage() {
 
   const [startDate, setStartDate] = useState(fmt8(startOfYear));  // default: YTD
   const [endDate,   setEndDate]   = useState(fmt8(today));
+
+  /* inject CSS once */
+  useEffect(() => { injectStyles(); }, []);
+
+  /* ── Sync calendar to endDate whenever range changes ───────────
+     So clicking "This Month" / "YTD" etc. navigates the calendar  */
+  useEffect(() => {
+    if (endDate) {
+      const d = new Date(endDate + 'T00:00:00');
+      setCalYear(d.getFullYear());
+      setCalMonth(d.getMonth());
+    }
+  }, [endDate]);
   const [data,      setData]      = useState(null);
   const [calYear,   setCalYear]   = useState(today.getFullYear());
   const [calMonth,  setCalMonth]  = useState(today.getMonth());
@@ -267,13 +385,11 @@ export default function DashboardPage() {
               <span style={{ fontSize: 15, color: showUSD ? '#475569' : '#c8d0da', fontWeight: 600, transition: 'color .2s', lineHeight: 1 }}>$</span>
             </div>
 
-            {/* Date range */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 9, padding: '6px 12px', fontSize: 12.5, boxShadow: '0 1px 3px rgba(0,0,0,.05)' }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} style={{ border: 'none', outline: 'none', fontSize: 12.5, fontFamily: 'inherit', background: 'transparent' }}/>
-              <span style={{ color: '#94a3b8' }}>–</span>
-              <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} style={{ border: 'none', outline: 'none', fontSize: 12.5, fontFamily: 'inherit', background: 'transparent' }}/>
-            </div>
+            {/* Date range — TradesPage style picker */}
+            <DateRangePicker
+              startDate={startDate} endDate={endDate}
+              onStart={setStartDate} onEnd={setEndDate}
+            />
           </div>
         </div>
 
@@ -403,31 +519,6 @@ export default function DashboardPage() {
                   style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '3px 7px', borderRadius: 6, color: '#64748b', fontSize: 17, lineHeight: 1, transition: 'background .15s' }}
                   onMouseEnter={e => e.currentTarget.style.background='#f1f5f9'}
                   onMouseLeave={e => e.currentTarget.style.background='none'}>›</button>
-                <select onChange={e => {
-                    const v = e.target.value; if (!v) return;
-                    const now = new Date();
-                    const pad = n => String(n).padStart(2,'0');
-                    const fmt = dt => dt.getFullYear()+'-'+pad(dt.getMonth()+1)+'-'+pad(dt.getDate());
-                    const en = fmt(now); let s = en;
-                    if      (v==='all') s = '2000-01-01';
-                    else if (v==='ytd') s = now.getFullYear()+'-01-01';
-                    else if (v==='1yr') { const dt=new Date(now); dt.setFullYear(dt.getFullYear()-1); s=fmt(dt); }
-                    else if (v==='6m')  { const dt=new Date(now); dt.setMonth(dt.getMonth()-6); s=fmt(dt); }
-                    else if (v==='3m')  { const dt=new Date(now); dt.setMonth(dt.getMonth()-3); s=fmt(dt); }
-                    else if (v==='1m')  { const dt=new Date(now); dt.setDate(1); s=fmt(dt); }
-                    else if (v==='cw')  { const dt=new Date(now); dt.setDate(dt.getDate()-dt.getDay()); s=fmt(dt); }
-                    setStartDate(s); setEndDate(en); e.target.value='';
-                  }} defaultValue=""
-                  style={{ appearance:'none', WebkitAppearance:'none', border:'1px solid #e2e8f0', borderRadius:7, padding:'4px 24px 4px 9px', fontSize:11.5, fontWeight:600, color:'#475569', cursor:'pointer', outline:'none', background:'#f8fafc' }}>
-                  <option value="" disabled>Quick ▾</option>
-                  <option value="cw">This Week</option>
-                  <option value="1m">This Month</option>
-                  <option value="3m">Past 3 Months</option>
-                  <option value="6m">6 Months</option>
-                  <option value="1yr">1 Year</option>
-                  <option value="ytd">YTD</option>
-                  <option value="all">All Time</option>
-                </select>
               </div>
               <div style={{ display: 'flex', gap: 10, fontSize: 11.5, color: '#64748b', flexShrink: 0 }}>
                 {[['#16a34a','Win'],['#dc2626','Loss'],['#94a3b8','BE']].map(([c,l]) => (
