@@ -538,50 +538,48 @@ export default function DashboardPage() {
             {/* Cells */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 0.81fr))', gap: 5, flex: 1, gridAutoRows: '1fr' }}>
               {cells.map((day, idx) => {
-                if (!day) return <div key={idx} style={{ background: '#f8fafc', borderRadius: 7, border: '1px solid #e8edf2', height: CELL_H /* ← cell height */ }}/>;
-                const key = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-                const d   = calMap[key];
-                const inRange = isInRange(calYear, calMonth, day);
-                const bg  = d && inRange ? calCellBg(d.netPnl, maxAbs) : '#f8fafc';
-                const tc  = d && inRange ? calCellTxt(d.netPnl, maxAbs) : '#c4cdd6';
-                const bdr = inRange && d ? calCellBorder(d.netPnl, maxAbs) : inRange ? '1px solid #dde3ea' : '1px solid #eef1f4';
-                const isToday  = key === fmt8(today);
-                const isSel    = selected === day;
-                return (
-                  <div key={idx}
-                    onClick={() => { if (inRange && d) setSelected(isSel ? null : day); }}
-                    style={{
-                      borderRadius: 7, padding: '5px 6px',
-                      background: bg, cursor: d && inRange ? 'pointer' : 'default',
-                      border: isToday ? '2px solid #2563eb' : isSel ? '2px solid #2563eb' : bdr,
-                      opacity: inRange ? 1 : 0,
-                      pointerEvents: inRange ? 'auto' : 'none',
-                      transition: 'transform .18s ease, box-shadow .18s ease',
-                      position: 'relative', height: CELL_H, /* ← cell height — set CELL_H above */
-                    }}
-                    onMouseEnter={e => { if (d && inRange) { e.currentTarget.style.transform='scale(1.06)'; e.currentTarget.style.boxShadow='0 3px 10px rgba(0,0,0,.14)'; e.currentTarget.style.zIndex='2'; }}}
-                    onMouseLeave={e => { e.currentTarget.style.transform='scale(1)'; e.currentTarget.style.boxShadow='none'; e.currentTarget.style.zIndex='auto'; }}
-                  >
-                    {/* Row 1: day number + trade count badge */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <div style={{ fontSize: 11, fontWeight: 600, color: tc, opacity: .85 }}>{day}</div>
-                      {d && inRange && d.tradeCount > 0 && (
-                        <div style={{ fontSize: 8.5, fontWeight: 700, color: tc, opacity: .7, background: 'rgba(0,0,0,.09)', borderRadius: 3, padding: '1px 3px', lineHeight: 1.4, whiteSpace: 'nowrap' }}>
-                          {d.tradeCount} trade{d.tradeCount !== 1 ? 's' : ''}
-                        </div>
-                      )}
-                    </div>
-                    {/* Row 2: P&L */}
-                    {d && inRange && <div style={{ fontSize: 11, fontWeight: 700, color: tc, marginTop: 2 }}>
-                      {d.netPnl >= 0 ? '+' : ''}{fmtR(d.netPnl)}
-                    </div>}
-                    {/* Row 3: R value */}
-                    {d && inRange && <div style={{ fontSize: 10, color: tc, opacity: .85 }}>
-                      {d.totalR >= 0 ? '+' : ''}{d.totalR?.toFixed(2)} R
-                    </div>}
-                  </div>
-                );
-              })}
+  if (!day) return <div key={idx} style={{ background: '#f8fafc', borderRadius: 7, border: '1px solid #e8edf2', height: CELL_H /* ← cell height */ }}/>;
+  const key = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+  const d        = calMap[key];
+  const inRange  = isInRange(calYear, calMonth, day);
+  const bg       = d && inRange ? calCellBg(d.netPnl, maxAbs) : '#f8fafc';
+  const tc       = d && inRange ? calCellTxt(d.netPnl, maxAbs) : '#c4cdd6';
+  const bdr      = inRange && d ? calCellBorder(d.netPnl, maxAbs) : '1px solid #e8edf2';
+  const isToday  = key === fmt8(today);
+  const isSel    = selected === day;
+  return (
+    <div key={idx}
+      onClick={() => { if (inRange && d) setSelected(isSel ? null : day); }}
+      style={{
+        borderRadius: 7, padding: '5px 6px',
+        background: bg,
+        cursor: d && inRange ? 'pointer' : 'default',
+        border: isToday ? '2px solid #2563eb' : isSel ? '2px solid #2563eb' : bdr,
+        transition: 'transform .18s ease, box-shadow .18s ease',
+        position: 'relative', height: CELL_H, /* ← cell height — set CELL_H above */
+      }}
+      onMouseEnter={e => { if (d && inRange) { e.currentTarget.style.transform='scale(1.06)'; e.currentTarget.style.boxShadow='0 3px 10px rgba(0,0,0,.14)'; e.currentTarget.style.zIndex='2'; }}}
+      onMouseLeave={e => { e.currentTarget.style.transform='scale(1)'; e.currentTarget.style.boxShadow='none'; e.currentTarget.style.zIndex='auto'; }}
+    >
+      {/* Day number — always visible for all dates */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: inRange ? tc : '#c4cdd6' }}>{day}</div>
+        {d && inRange && d.tradeCount > 0 && (
+          <div style={{ fontSize: 8.5, fontWeight: 700, color: tc, opacity: .7, background: 'rgba(0,0,0,.09)', borderRadius: 3, padding: '1px 3px', lineHeight: 1.4, whiteSpace: 'nowrap' }}>
+            {d.tradeCount} trade{d.tradeCount !== 1 ? 's' : ''}
+          </div>
+        )}
+      </div>
+      {/* P&L and R — only shown for dates within selected range */}
+      {d && inRange && <div style={{ fontSize: 11, fontWeight: 700, color: tc, marginTop: 2 }}>
+        {d.netPnl >= 0 ? '+' : ''}{fmtR(d.netPnl)}
+      </div>}
+      {d && inRange && <div style={{ fontSize: 10, color: tc, opacity: .85 }}>
+        {d.totalR >= 0 ? '+' : ''}{d.totalR?.toFixed(2)} R
+      </div>}
+    </div>
+  );
+})}
             </div>
           </div>
 
