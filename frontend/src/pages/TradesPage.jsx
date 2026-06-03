@@ -407,7 +407,7 @@ export default function TradesPage() {
             <select value={sortField} onChange={e => setSortField(e.target.value)}
               style={{ padding:'6px 10px', border:'1px solid #e2e8f0', borderRadius:8, fontSize:12.5, fontFamily:'inherit', outline:'none', background:'#fff', color:'#374151', fontWeight:500 }}>
               <option value="date">Sort: Date</option>
-              <option value="resultDollar">Sort: Result ₹</option>
+              <option value="resultDollar">Sort: Result $</option>
               <option value="resultPercent">Sort: Result %</option>
               <option value="rr">Sort: RR</option>
             </select>
@@ -609,8 +609,11 @@ export default function TradesPage() {
                     <input type="number" required step="0.01" placeholder="e.g. 1.0" value={form.riskPercent} onChange={e => setForm({...form, riskPercent: e.target.value})}/>
                   </div>
                   <div className="form-group full">
-                    <label>Result (negative for loss)</label>
-                    <input type="number" required step="0.01" placeholder="e.g. 1750 or -200" value={form.resultDollar} onChange={e => setForm({...form, resultDollar: e.target.value})}/>
+                    <label>Result in $ (negative for loss)</label>
+                    <div style={{ position:'relative' }}>
+                      <span style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', color:'#64748b', fontWeight:600, fontSize:13.5 }}>$</span>
+                      <input type="number" required step="0.01" placeholder="e.g. 1750 or -200" value={form.resultDollar} onChange={e => setForm({...form, resultDollar: e.target.value})} style={{ paddingLeft:22 }}/>
+                    </div>
                   </div>
                 </div>
                 <div className="modal-footer">
