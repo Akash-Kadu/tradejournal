@@ -268,7 +268,7 @@ export default function DashboardPage() {
   /* ── Calendar cell dimensions ────────────────────────────────────────
      CELL_H : height of each calendar cell in pixels — change here only
      Cell WIDTH is auto, controlled by grid: repeat(7, minmax(0, Xfr))  */
-  const CELL_H = 61; /* ← SET CALENDAR CELL HEIGHT HERE (pixels) */
+  const CELL_H = 70; /* ← SET CALENDAR CELL HEIGHT HERE (pixels) */
 
   const fetchDash = useCallback(async () => {
     setLoaded(false);
