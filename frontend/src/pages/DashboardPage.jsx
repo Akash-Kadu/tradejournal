@@ -8,8 +8,8 @@ import Sidebar    from '../components/Sidebar';
 import { useAuth } from '../context/AuthContext';
 import api        from '../services/api';
 
-const today        = new Date();
-const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+const today       = new Date();
+const startOfYear = new Date(today.getFullYear(), 0, 1); // Jan 1 of current year = YTD
 const fmt8         = d => d.toISOString().split('T')[0];
 const MONTHS    = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DAY_HDR   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -125,7 +125,7 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const navigate  = useNavigate();
 
-  const [startDate, setStartDate] = useState(fmt8(firstOfMonth));
+  const [startDate, setStartDate] = useState(fmt8(startOfYear));  // default: YTD
   const [endDate,   setEndDate]   = useState(fmt8(today));
   const [data,      setData]      = useState(null);
   const [calYear,   setCalYear]   = useState(today.getFullYear());
@@ -146,6 +146,11 @@ export default function DashboardPage() {
 
   /* breakeven = between -10 and +10 */
   const isBE = pnl => pnl != null && pnl >= -10 && pnl <= 10;
+
+  /* ── Calendar cell dimensions ────────────────────────────────────────
+     CELL_H : height of each calendar cell in pixels — change here only
+     Cell WIDTH is auto, controlled by grid: repeat(7, minmax(0, Xfr))  */
+  const CELL_H = 61; /* ← SET CALENDAR CELL HEIGHT HERE (pixels) */
 
   const fetchDash = useCallback(async () => {
     setLoaded(false);
@@ -404,24 +409,24 @@ export default function DashboardPage() {
                     const pad = n => String(n).padStart(2,'0');
                     const fmt = dt => dt.getFullYear()+'-'+pad(dt.getMonth()+1)+'-'+pad(dt.getDate());
                     const en = fmt(now); let s = en;
-                    if (v==='all') s='2000-01-01';
-                    else if (v==='ytd') s=now.getFullYear()+'-01-01';
-                    else if (v==='12m') { const dt=new Date(now); dt.setFullYear(dt.getFullYear()-1); s=fmt(dt); }
+                    if      (v==='all') s = '2000-01-01';
+                    else if (v==='ytd') s = now.getFullYear()+'-01-01';
+                    else if (v==='1yr') { const dt=new Date(now); dt.setFullYear(dt.getFullYear()-1); s=fmt(dt); }
                     else if (v==='6m')  { const dt=new Date(now); dt.setMonth(dt.getMonth()-6); s=fmt(dt); }
                     else if (v==='3m')  { const dt=new Date(now); dt.setMonth(dt.getMonth()-3); s=fmt(dt); }
                     else if (v==='1m')  { const dt=new Date(now); dt.setDate(1); s=fmt(dt); }
                     else if (v==='cw')  { const dt=new Date(now); dt.setDate(dt.getDate()-dt.getDay()); s=fmt(dt); }
                     setStartDate(s); setEndDate(en); e.target.value='';
-                  }} defaultValue=
+                  }} defaultValue=""
                   style={{ appearance:'none', WebkitAppearance:'none', border:'1px solid #e2e8f0', borderRadius:7, padding:'4px 24px 4px 9px', fontSize:11.5, fontWeight:600, color:'#475569', cursor:'pointer', outline:'none', background:'#f8fafc' }}>
-                  <option value= disabled>Quick ▾</option>
-                  <option value=all>All</option>
-                  <option value=ytd>YTD</option>
-                  <option value=12m>12 Months</option>
-                  <option value=6m>6 Months</option>
-                  <option value=3m>3 Months</option>
-                  <option value=1m>This Month</option>
-                  <option value=cw>This Week</option>
+                  <option value="" disabled>Quick ▾</option>
+                  <option value="cw">This Week</option>
+                  <option value="1m">This Month</option>
+                  <option value="3m">Past 3 Months</option>
+                  <option value="6m">6 Months</option>
+                  <option value="1yr">1 Year</option>
+                  <option value="ytd">YTD</option>
+                  <option value="all">All Time</option>
                 </select>
               </div>
               <div style={{ display: 'flex', gap: 10, fontSize: 11.5, color: '#64748b', flexShrink: 0 }}>
@@ -442,7 +447,7 @@ export default function DashboardPage() {
             {/* Cells */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 0.81fr))', gap: 5, flex: 1, gridAutoRows: '1fr' }}>
               {cells.map((day, idx) => {
-                if (!day) return <div key={idx} style={{ background: '#f8fafc', borderRadius: 7, border: '1px solid #e8edf2', minHeight: 61 }}/>;
+                if (!day) return <div key={idx} style={{ background: '#f8fafc', borderRadius: 7, border: '1px solid #e8edf2', height: CELL_H /* ← cell height */ }}/>;
                 const key = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
                 const d   = calMap[key];
                 const inRange = isInRange(calYear, calMonth, day);
@@ -461,7 +466,7 @@ export default function DashboardPage() {
                       opacity: inRange ? 1 : 0,
                       pointerEvents: inRange ? 'auto' : 'none',
                       transition: 'transform .18s ease, box-shadow .18s ease',
-                      position: 'relative', minHeight: 61,
+                      position: 'relative', height: CELL_H, /* ← cell height — set CELL_H above */
                     }}
                     onMouseEnter={e => { if (d && inRange) { e.currentTarget.style.transform='scale(1.06)'; e.currentTarget.style.boxShadow='0 3px 10px rgba(0,0,0,.14)'; e.currentTarget.style.zIndex='2'; }}}
                     onMouseLeave={e => { e.currentTarget.style.transform='scale(1)'; e.currentTarget.style.boxShadow='none'; e.currentTarget.style.zIndex='auto'; }}
