@@ -17,6 +17,7 @@ public class TradeMapper {
                 .strategySrNo(trade.getStrategy().getSrNo())
                 .strategy(trade.getStrategy().getStrategyName())
                 .session(trade.getSession().name())
+                .pair(trade.getPair())
                 .qty(trade.getQty())
                 .rr(trade.getRr())
                 .riskPercent(trade.getRiskPercent())
