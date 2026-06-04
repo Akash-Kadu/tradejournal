@@ -13,9 +13,10 @@ public class TradeRequest {
     private Long accountSrNo;
     private Session session;
     private Long strategySrNo;
+    private String pair;       // e.g. XAUUSD, NAS100
     private Integer qty;
     private Double rr;
     private Double riskPercent;
     private BuySell buySell;
-    private Double resultDollar;
+    private Double resultDollar;  // always USD
 }
