@@ -46,6 +46,10 @@ public class Trade {
     @JoinColumn(name = "strategy_sr_no", nullable = false)
     private Strategy strategy;
 
+    // Trading pair e.g. XAUUSD, NAS100, EURUSD
+    @Column
+    private String pair;
+
     @Column(nullable = false)
     private Integer qty;
 
@@ -59,6 +63,7 @@ public class Trade {
     @Column(nullable = false)
     private BuySell buySell;
 
+    // Always stored in USD
     @Column(nullable = false)
     private Double resultDollar;
 
