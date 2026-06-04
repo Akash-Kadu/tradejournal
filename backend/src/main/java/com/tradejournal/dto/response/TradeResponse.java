@@ -17,10 +17,11 @@ public class TradeResponse {
     private Long strategySrNo;
     private String strategy;
     private String session;
+    private String pair;          // trading pair
     private Integer qty;
     private Double rr;
     private Double riskPercent;
     private String buySell;
-    private Double resultDollar;
+    private Double resultDollar;  // always USD
     private Double resultPercent;
 }
