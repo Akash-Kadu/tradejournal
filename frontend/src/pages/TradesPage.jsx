@@ -10,7 +10,7 @@ const dayLbl     = d => d.charAt(0) + d.slice(1).toLowerCase();
 
 const emptyForm = {
   date:'', accountSrNo:'', session:'ASIAN', strategySrNo:'',
-  qty:'', rr:'', riskPercent:'', buySell:'BUY', resultDollar:''
+  pair:'', qty:'', rr:'', riskPercent:'', buySell:'BUY', resultDollar:''
 };
 
 const today     = new Date();
@@ -23,7 +23,6 @@ const injectStyles = () => {
   const s = document.createElement('style');
   s.id = 'tp-styles';
   s.textContent = `
-    /* Currency toggle */
     .tp-toggle-wrap {
       display:flex; align-items:center; gap:6px;
       background:#fff; border:1px solid #e2e8f0; border-radius:99px;
@@ -46,8 +45,6 @@ const injectStyles = () => {
       border:1px solid #e2e8f0; border-radius:6px;
       padding:2px 7px; white-space:nowrap;
     }
-
-    /* Filter dropdown */
     .tp-filter-btn {
       display:flex; align-items:center; gap:6px;
       background:#fff; border:1px solid #e2e8f0; border-radius:8px;
@@ -86,8 +83,6 @@ const injectStyles = () => {
     }
     .tp-chip.sel { border-color:#2563eb; background:#eff6ff; color:#2563eb; font-weight:600; }
     .tp-filter-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:12px; padding-top:10px; border-top:1px solid #f1f5f9; }
-
-    /* Date range picker */
     .tp-date-wrap {
       display:flex; align-items:center; gap:6px;
       background:#fff; border:1px solid #e2e8f0; border-radius:8px;
@@ -115,14 +110,12 @@ const injectStyles = () => {
       transition:border-color .2s;
     }
     .tp-date-inputs input:focus { border-color:#2563eb; }
-
-    /* Overlay to close dropdowns */
     .tp-backdrop { position:fixed; inset:0; z-index:90; }
   `;
   document.head.appendChild(s);
 };
 
-/* ── Currency Toggle Component ────────────────────────────────── */
+/* ── Currency Toggle ──────────────────────────────────────────── */
 function CurrencyToggle({ currency, onChange, usdRate }) {
   const isUSD = currency === 'USD';
   return (
@@ -139,12 +132,12 @@ function CurrencyToggle({ currency, onChange, usdRate }) {
   );
 }
 
-/* ── Filter Panel Component ───────────────────────────────────── */
+/* ── Filter Panel ─────────────────────────────────────────────── */
 function FilterPanel({ accounts, strategies, filters, onChange, onClear, onClose }) {
-  const accountOptions = accounts.map(a => ({ value: String(a.srNo), label: a.accountId }));
+  const accountOptions  = accounts.map(a => ({ value: String(a.srNo), label: a.accountId }));
   const strategyOptions = strategies.map(s => ({ value: String(s.srNo), label: s.strategyName }));
-  const sessionOptions = SESSIONS.map(s => ({ value: s, label: sessionLbl[s] }));
-  const dayOptions = DAYS.map(d => ({ value: d, label: dayLbl(d) }));
+  const sessionOptions  = SESSIONS.map(s => ({ value: s, label: sessionLbl[s] }));
+  const dayOptions      = DAYS.map(d => ({ value: d, label: dayLbl(d) }));
 
   const toggle = (key, val) => {
     const cur = filters[key] || [];
@@ -170,10 +163,10 @@ function FilterPanel({ accounts, strategies, filters, onChange, onClear, onClose
 
   return (
     <div className="tp-filter-panel">
-      <Section label="Account" optKey="accounts" options={accountOptions}/>
+      <Section label="Account"  optKey="accounts"   options={accountOptions}/>
       <Section label="Strategy" optKey="strategies" options={strategyOptions}/>
-      <Section label="Session" optKey="sessions" options={sessionOptions}/>
-      <Section label="Day" optKey="days" options={dayOptions}/>
+      <Section label="Session"  optKey="sessions"   options={sessionOptions}/>
+      <Section label="Day"      optKey="days"       options={dayOptions}/>
       <div className="tp-filter-actions">
         {totalActive > 0 && (
           <button onClick={onClear} style={{ padding:'5px 12px', border:'1px solid #e2e8f0', borderRadius:7, background:'#fff', fontSize:12, fontWeight:600, color:'#64748b', cursor:'pointer' }}>
@@ -188,7 +181,7 @@ function FilterPanel({ accounts, strategies, filters, onChange, onClear, onClose
   );
 }
 
-/* ── Date Range Picker Component ──────────────────────────────── */
+/* ── Date Range Picker ────────────────────────────────────────── */
 function DateRangePicker({ startDate, endDate, onStart, onEnd }) {
   const [open, setOpen] = useState(false);
   const ref = useRef();
@@ -199,24 +192,10 @@ function DateRangePicker({ startDate, endDate, onStart, onEnd }) {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const setThisWeek = () => {
-    const d = new Date(); const day = d.getDay();
-    const mon = new Date(d); mon.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
-    onStart(fmt8(mon)); onEnd(fmt8(d));
-  };
-  const setThisMonth = () => {
-    const d = new Date();
-    const first = new Date(d.getFullYear(), d.getMonth(), 1);
-    onStart(fmt8(first)); onEnd(fmt8(d));
-  };
-  const setLast30 = () => {
-    const d = new Date(); const s = new Date(); s.setDate(d.getDate() - 30);
-    onStart(fmt8(s)); onEnd(fmt8(d));
-  };
-  const setLast3M = () => {
-    const d = new Date(); const s = new Date(); s.setMonth(d.getMonth() - 3);
-    onStart(fmt8(s)); onEnd(fmt8(d));
-  };
+  const setThisWeek  = () => { const d = new Date(); const day = d.getDay(); const mon = new Date(d); mon.setDate(d.getDate() - (day === 0 ? 6 : day - 1)); onStart(fmt8(mon)); onEnd(fmt8(d)); };
+  const setThisMonth = () => { const d = new Date(); onStart(fmt8(new Date(d.getFullYear(), d.getMonth(), 1))); onEnd(fmt8(d)); };
+  const setLast30    = () => { const d = new Date(); const s = new Date(); s.setDate(d.getDate() - 30); onStart(fmt8(s)); onEnd(fmt8(d)); };
+  const setLast3M    = () => { const d = new Date(); const s = new Date(); s.setMonth(d.getMonth() - 3); onStart(fmt8(s)); onEnd(fmt8(d)); };
 
   const displayStart = startDate ? startDate.slice(5).replace('-','/') : '—';
   const displayEnd   = endDate   ? endDate.slice(5).replace('-','/')   : '—';
@@ -306,19 +285,27 @@ export default function TradesPage() {
   const openAdd   = () => { setEditing(null); setForm(emptyForm); setModal(true); };
   const openEdit  = t => {
     setEditing(t.srNo);
-    setForm({ date:t.date, accountSrNo:t.accountSrNo, session:t.session,
-      strategySrNo:t.strategySrNo, qty:t.qty, rr:t.rr,
-      riskPercent:t.riskPercent, buySell:t.buySell, resultDollar:t.resultDollar });
+    setForm({
+      date: t.date, accountSrNo: t.accountSrNo, session: t.session,
+      strategySrNo: t.strategySrNo, pair: t.pair || '',
+      qty: t.qty, rr: t.rr, riskPercent: t.riskPercent,
+      buySell: t.buySell, resultDollar: t.resultDollar
+    });
     setModal(true);
   };
 
   const handleSave = async e => {
     e.preventDefault(); setLoading(true);
     try {
-      const body = { ...form,
-        accountSrNo: Number(form.accountSrNo), strategySrNo: Number(form.strategySrNo),
-        qty: Number(form.qty), rr: Number(form.rr),
-        riskPercent: Number(form.riskPercent), resultDollar: Number(form.resultDollar),
+      const body = {
+        ...form,
+        accountSrNo:  Number(form.accountSrNo),
+        strategySrNo: Number(form.strategySrNo),
+        qty:          Number(form.qty),
+        rr:           Number(form.rr),
+        riskPercent:  Number(form.riskPercent),
+        // resultDollar is entered and stored as USD — no conversion
+        resultDollar: Number(form.resultDollar),
       };
       if (editing) await api.put(`/trades/${editing}`, body);
       else         await api.post('/trades', body);
@@ -337,13 +324,21 @@ export default function TradesPage() {
     } catch (err) { showToast(err.response?.data?.message || 'Error', 'error'); }
   };
 
-  /* Currency helpers */
+  /* ── Currency display helpers ─────────────────────────────────
+     resultDollar is always stored as USD.
+     - USD mode: show as-is with $ symbol
+     - INR mode: multiply by usdRate, show with ₹ symbol
+  ── */
   const sym  = currency === 'USD' ? '$' : '₹';
-  const conv = v => v == null ? 0 : currency === 'USD' ? v / usdRate : v;
+  const conv = v => {
+    if (v == null) return 0;
+    return currency === 'USD' ? v : v * usdRate;   // USD stored → multiply for INR display
+  };
   const fmtM = v => {
-    const cv = conv(v); const sign = cv < 0 ? '-' : '';
-    const abs = Math.abs(cv);
-    const str = abs >= 1000
+    const cv   = conv(v);
+    const sign = cv < 0 ? '-' : '';
+    const abs  = Math.abs(cv);
+    const str  = abs >= 1000
       ? abs.toLocaleString(currency === 'USD' ? 'en-US' : 'en-IN', { minimumFractionDigits:2, maximumFractionDigits:2 })
       : abs.toFixed(2);
     return `${sign}${sym}${str}`;
@@ -352,19 +347,17 @@ export default function TradesPage() {
   /* Filtering */
   const activeFiltersCount = Object.values(filters).reduce((n, arr) => n + arr.length, 0);
   const filtered = trades.filter(t => {
-    if (filters.accounts.length   && !filters.accounts.includes(String(t.accountSrNo)))     return false;
-    if (filters.strategies.length && !filters.strategies.includes(String(t.strategySrNo)))  return false;
-    if (filters.sessions.length   && !filters.sessions.includes(t.session))                  return false;
-    if (filters.days.length       && !filters.days.includes(t.day))                          return false;
+    if (filters.accounts.length   && !filters.accounts.includes(String(t.accountSrNo)))    return false;
+    if (filters.strategies.length && !filters.strategies.includes(String(t.strategySrNo))) return false;
+    if (filters.sessions.length   && !filters.sessions.includes(t.session))                return false;
+    if (filters.days.length       && !filters.days.includes(t.day))                        return false;
     return true;
   });
 
   /* Sorting */
   const sorted = [...filtered].sort((a, b) => {
     const va = a[sortField] ?? 0, vb = b[sortField] ?? 0;
-    if (sortField === 'date') return sortAsc
-      ? new Date(va) - new Date(vb)
-      : new Date(vb) - new Date(va);
+    if (sortField === 'date') return sortAsc ? new Date(va) - new Date(vb) : new Date(vb) - new Date(va);
     return sortAsc ? va - vb : vb - va;
   });
 
@@ -387,19 +380,15 @@ export default function TradesPage() {
         {/* ── Header ────────────────────────────────────────────── */}
         <div style={{ display:'flex', alignItems:'center', marginBottom:16, gap:10, flexWrap:'wrap' }}>
 
-          {/* Left: title */}
           <h1 className="page-title" style={{ margin:0, flexShrink:0 }}>Trades</h1>
 
-          {/* Date range — immediately after title */}
           <DateRangePicker
             startDate={startDate} endDate={endDate}
             onStart={setStartDate} onEnd={setEndDate}
           />
 
-          {/* Spacer */}
           <div style={{ flex:1 }}/>
 
-          {/* Currency switch */}
           <CurrencyToggle currency={currency} onChange={setCurrency} usdRate={usdRate}/>
 
           {/* Sort */}
@@ -442,7 +431,6 @@ export default function TradesPage() {
             )}
           </div>
 
-          {/* Add Trade */}
           <button className="btn btn-primary" onClick={openAdd}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Add Trade
@@ -497,6 +485,7 @@ export default function TradesPage() {
                   <th>Account ID</th>
                   <th>Session</th>
                   <th>Strategy</th>
+                  <th>Pair</th>
                   <th style={{ cursor:'pointer' }} onClick={() => toggleSort('qty')}>
                     <span style={{ display:'flex', alignItems:'center', gap:4 }}>Qty {sortIcon('qty')}</span>
                   </th>
@@ -515,7 +504,7 @@ export default function TradesPage() {
               </thead>
               <tbody>
                 {sorted.length === 0 && (
-                  <tr><td colSpan={12} style={{ textAlign:'center', color:'#94a3b8', padding:36 }}>No trades found.</td></tr>
+                  <tr><td colSpan={13} style={{ textAlign:'center', color:'#94a3b8', padding:36 }}>No trades found.</td></tr>
                 )}
                 {sorted.map((t, i) => (
                   <tr key={t.srNo}>
@@ -533,6 +522,10 @@ export default function TradesPage() {
                         <span className={`badge ${t.buySell === 'BUY' ? 'badge-buy' : 'badge-sell'}`}>{t.buySell}</span>
                         {t.strategy}
                       </div>
+                    </td>
+                    {/* Pair column — shows "—" if not set (older trades) */}
+                    <td style={{ fontFamily:'DM Mono, monospace', fontSize:12, fontWeight:600 }}>
+                      {t.pair || <span style={{ color:'#cbd5e1' }}>—</span>}
                     </td>
                     <td>{t.qty}</td>
                     <td>{t.rr?.toFixed(2)}</td>
@@ -589,6 +582,12 @@ export default function TradesPage() {
                       {strategies.map(s => <option key={s.srNo} value={s.srNo}>{s.strategyName}</option>)}
                     </select>
                   </div>
+                  {/* Pair field — e.g. XAUUSD, NAS100, EURUSD */}
+                  <div className="form-group">
+                    <label>Pair</label>
+                    <input type="text" placeholder="e.g. XAUUSD, NAS100" value={form.pair}
+                      onChange={e => setForm({...form, pair: e.target.value.toUpperCase()})}/>
+                  </div>
                   <div className="form-group">
                     <label>Buy / Sell</label>
                     <select value={form.buySell} onChange={e => setForm({...form, buySell: e.target.value})}>
@@ -598,21 +597,28 @@ export default function TradesPage() {
                   </div>
                   <div className="form-group">
                     <label>Qty</label>
-                    <input type="number" required min="1" placeholder="e.g. 5" value={form.qty} onChange={e => setForm({...form, qty: e.target.value})}/>
+                    <input type="number" required min="1" placeholder="e.g. 5" value={form.qty}
+                      onChange={e => setForm({...form, qty: e.target.value})}/>
                   </div>
                   <div className="form-group">
                     <label>RR (Risk:Reward)</label>
-                    <input type="number" required step="0.01" placeholder="e.g. 2.5" value={form.rr} onChange={e => setForm({...form, rr: e.target.value})}/>
+                    <input type="number" required step="0.01" placeholder="e.g. 2.5" value={form.rr}
+                      onChange={e => setForm({...form, rr: e.target.value})}/>
                   </div>
                   <div className="form-group">
                     <label>Risk %</label>
-                    <input type="number" required step="0.01" placeholder="e.g. 1.0" value={form.riskPercent} onChange={e => setForm({...form, riskPercent: e.target.value})}/>
+                    <input type="number" required step="0.01" placeholder="e.g. 1.0" value={form.riskPercent}
+                      onChange={e => setForm({...form, riskPercent: e.target.value})}/>
                   </div>
+                  {/* Result is always entered and stored in USD */}
                   <div className="form-group full">
-                    <label>Result in $ (negative for loss)</label>
+                    <label>Result in USD (negative for loss)</label>
                     <div style={{ position:'relative' }}>
                       <span style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', color:'#64748b', fontWeight:600, fontSize:13.5 }}>$</span>
-                      <input type="number" required step="0.01" placeholder="e.g. 1750 or -200" value={form.resultDollar} onChange={e => setForm({...form, resultDollar: e.target.value})} style={{ paddingLeft:22 }}/>
+                      <input type="number" required step="0.01" placeholder="e.g. 1750 or -200"
+                        value={form.resultDollar}
+                        onChange={e => setForm({...form, resultDollar: e.target.value})}
+                        style={{ paddingLeft:22 }}/>
                     </div>
                   </div>
                 </div>
