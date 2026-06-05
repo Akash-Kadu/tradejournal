@@ -524,7 +524,7 @@ export default function TradesPage() {
                       </div>
                     </td>
                     {/* Pair column — shows "—" if not set (older trades) */}
-                    <td style={{ fontFamily:'DM Mono, monospace', fontSize:12, fontWeight:600 }}>
+                    <td style={{ fontFamily:'inherit', fontSize:13.5 }}>
                       {t.pair || <span style={{ color:'#cbd5e1' }}>—</span>}
                     </td>
                     <td>{t.qty}</td>
