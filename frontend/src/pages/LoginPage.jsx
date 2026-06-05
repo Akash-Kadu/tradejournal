@@ -56,8 +56,8 @@ export default function LoginPage() {
   return (
     <div style={{ display:'flex', minHeight:'100vh', background:'#f8fafc' }}>
 
-      {/* ── Left panel ── */}
-      <div style={{ width:340, background:'#fff', padding:'48px 36px', display:'flex', flexDirection:'column', borderRight:'1px solid #e2e8f0' }}>
+      {/* ── Left panel — hidden on mobile via CSS ── */}
+      <div className="login-left-panel" style={{ width:340, background:'#fff', padding:'48px 36px', display:'flex', flexDirection:'column', borderRight:'1px solid #e2e8f0' }}>
         <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:48 }}>
           <div style={{ width:40, height:40, background:'linear-gradient(135deg,#2563eb,#16a34a)', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:700, fontSize:16 }}>TJ</div>
           <div>
@@ -97,7 +97,7 @@ export default function LoginPage() {
           <h1 style={{ textAlign:'center', fontSize:28, fontWeight:700, marginBottom:6 }}>Welcome Back</h1>
           <p style={{ textAlign:'center', color:'#64748b', marginBottom:32, fontSize:14 }}>Log in or create your TradeJournal account</p>
 
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:32 }}>
+          <div className="login-forms-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:32 }}>
 
             {/* LOGIN */}
             <div style={{ background:'#fff', borderRadius:14, padding:28, border:'1px solid #e2e8f0', boxShadow:'0 1px 3px rgba(0,0,0,.06)' }}>
