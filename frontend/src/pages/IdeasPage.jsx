@@ -50,7 +50,8 @@ const injectStyles = () => {
     /* ── Idea card ── */
     .ip-card {
       background: #fff;
-      border: 1px solid #e2e8f0;
+      border: 1.5px solid #b6c8d9;
+      box-shadow: 0 2px 8px rgba(0,0,0,.07);
       border-radius: 12px;
       overflow: hidden;
       display: flex;
@@ -60,7 +61,7 @@ const injectStyles = () => {
       cursor: pointer;
       transition: box-shadow .2s, transform .2s;
     }
-    .ip-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,.1); transform: translateY(-2px); }
+    .ip-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,.14); transform: translateY(-2px); border-color: #7aa8c4; }
 
     /* Card sections proportioned by height */
     .ip-card-head  { height: 10%; min-height: 28px; padding: 0 12px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f5f9; flex-shrink: 0; }
