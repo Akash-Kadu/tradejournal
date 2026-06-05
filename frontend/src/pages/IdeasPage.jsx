@@ -55,7 +55,7 @@ const injectStyles = () => {
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      height: 400px;
+      height: 300px;
       position: relative;
       cursor: pointer;
       transition: box-shadow .2s, transform .2s;
@@ -63,10 +63,10 @@ const injectStyles = () => {
     .ip-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,.1); transform: translateY(-2px); }
 
     /* Card sections proportioned by height */
-    .ip-card-head  { height: 10%; min-height: 36px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f5f9; flex-shrink: 0; }
+    .ip-card-head  { height: 10%; min-height: 28px; padding: 0 12px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f5f9; flex-shrink: 0; }
     .ip-card-img   { height: 40%; background: #f8fafc; flex-shrink: 0; overflow: hidden; position: relative; }
-    .ip-card-body  { height: 40%; padding: 10px 14px; overflow: hidden; flex-shrink: 0; }
-    .ip-card-tags  { height: 10%; min-height: 30px; padding: 0 14px; display: flex; align-items: center; gap: 5px; overflow: hidden; border-top: 1px solid #f1f5f9; flex-shrink: 0; flex-wrap: nowrap; }
+    .ip-card-body  { height: 40%; padding: 8px 12px; overflow: hidden; flex-shrink: 0; }
+    .ip-card-tags  { height: 10%; min-height: 26px; padding: 0 12px; display: flex; align-items: center; gap: 5px; overflow: hidden; border-top: 1px solid #f1f5f9; flex-shrink: 0; flex-wrap: nowrap; }
 
     .ip-card-title {
       font-size: 13px; font-weight: 700; color: #0f172a;
@@ -74,7 +74,7 @@ const injectStyles = () => {
       flex: 1; min-width: 0;
     }
     .ip-card-date  { font-size: 10.5px; color: #94a3b8; white-space: nowrap; margin-left: 8px; font-family: monospace; }
-    .ip-card-desc  { font-size: 12.5px; color: #475569; line-height: 1.6; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; }
+    .ip-card-desc  { font-size: 12px; color: #475569; line-height: 1.55; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; white-space: pre-wrap; }
 
     /* floating edit/delete buttons */
     .ip-card-actions {
@@ -238,6 +238,8 @@ export default function IdeasPage() {
   const [startDate,  setStartDate]  = useState('');
   const [endDate,    setEndDate]    = useState('');
   const [tagPanelOpen, setTagPanelOpen] = useState(false);
+  const [dateOpen,     setDateOpen]     = useState(false);
+  const dateRef = useRef();
   const tagPanelRef = useRef();
 
   // modal state
@@ -260,6 +262,13 @@ export default function IdeasPage() {
   // close tag panel on outside click
   useEffect(() => {
     const h = e => { if (tagPanelRef.current && !tagPanelRef.current.contains(e.target)) setTagPanelOpen(false); };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, []);
+
+  // close date panel on outside click
+  useEffect(() => {
+    const h = e => { if (dateRef.current && !dateRef.current.contains(e.target)) setDateOpen(false); };
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
   }, []);
@@ -373,16 +382,41 @@ export default function IdeasPage() {
             <input className="ip-search" placeholder="Search by title…" value={search} onChange={e => setSearch(e.target.value)}/>
           </div>
 
-          {/* Date range */}
-          <div style={{ display:'flex', alignItems:'center', gap:6, background:'#fff', border:'1px solid #e2e8f0', borderRadius:8, padding:'5px 10px' }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
-              style={{ border:'none', outline:'none', fontSize:12.5, fontFamily:'inherit', color:'#374151', background:'transparent' }}/>
-            <span style={{ color:'#94a3b8', fontSize:12 }}>–</span>
-            <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
-              style={{ border:'none', outline:'none', fontSize:12.5, fontFamily:'inherit', color:'#374151', background:'transparent' }}/>
-            {(startDate || endDate) && (
-              <span onClick={() => { setStartDate(''); setEndDate(''); }} style={{ cursor:'pointer', color:'#94a3b8', fontSize:14, fontWeight:700, lineHeight:1, marginLeft:2 }}>×</span>
+          {/* Date range with quick ranges */}
+          <div style={{ position:'relative' }} ref={dateRef}>
+            <div onClick={() => setDateOpen(o => !o)} style={{ display:'flex', alignItems:'center', gap:6, background:'#fff', border:'1px solid #e2e8f0', borderRadius:8, padding:'6px 12px', cursor:'pointer', fontSize:12.5, color:'#374151', fontWeight:500, minWidth:180 }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span>{startDate && endDate ? `${startDate.slice(5).replace('-','/')} – ${endDate.slice(5).replace('-','/')}` : startDate ? startDate : 'All dates'}</span>
+              {(startDate || endDate) && <span onClick={e => { e.stopPropagation(); setStartDate(''); setEndDate(''); }} style={{ marginLeft:4, color:'#94a3b8', fontWeight:700, fontSize:14 }}>×</span>}
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            {dateOpen && (
+              <div style={{ position:'absolute', top:'calc(100% + 6px)', left:0, background:'#fff', border:'1px solid #e2e8f0', borderRadius:12, boxShadow:'0 8px 28px rgba(0,0,0,.12)', zIndex:100, padding:14, minWidth:300, animation:'ipFade .18s ease' }}>
+                <div style={{ fontSize:10.5, fontWeight:700, color:'#64748b', textTransform:'uppercase', letterSpacing:'.05em', marginBottom:8 }}>Quick Range</div>
+                <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:12 }}>
+                  {[
+                    { label:'Today',        fn:() => { const d=fmtLocal(new Date()); setStartDate(d); setEndDate(d); }},
+                    { label:'This Week',    fn:() => { const n=new Date(); const mon=new Date(n); mon.setDate(n.getDate()-(n.getDay()===0?6:n.getDay()-1)); setStartDate(fmtLocal(mon)); setEndDate(fmtLocal(n)); }},
+                    { label:'This Month',   fn:() => { const n=new Date(); setStartDate(`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-01`); setEndDate(fmtLocal(n)); }},
+                    { label:'Last 30 Days', fn:() => { const n=new Date(); const s=new Date(); s.setDate(n.getDate()-30); setStartDate(fmtLocal(s)); setEndDate(fmtLocal(n)); }},
+                    { label:'Last 3 Months',fn:() => { const n=new Date(); const s=new Date(); s.setMonth(n.getMonth()-3); setStartDate(fmtLocal(s)); setEndDate(fmtLocal(n)); }},
+                    { label:'This Year',    fn:() => { const n=new Date(); setStartDate(`${n.getFullYear()}-01-01`); setEndDate(fmtLocal(n)); }},
+                    { label:'All Time',     fn:() => { setStartDate(''); setEndDate(''); }},
+                  ].map(q => (
+                    <span key={q.label} onClick={() => { q.fn(); setDateOpen(false); }} style={{ padding:'4px 12px', borderRadius:99, fontSize:12, fontWeight:600, border:'1.5px solid #e2e8f0', background:'#f8fafc', color:'#374151', cursor:'pointer' }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor='#2563eb'; e.currentTarget.style.color='#2563eb'; e.currentTarget.style.background='#eff6ff'; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor='#e2e8f0'; e.currentTarget.style.color='#374151'; e.currentTarget.style.background='#f8fafc'; }}>
+                      {q.label}
+                    </span>
+                  ))}
+                </div>
+                <div style={{ fontSize:10.5, fontWeight:700, color:'#64748b', textTransform:'uppercase', letterSpacing:'.05em', marginBottom:6 }}>Custom Range</div>
+                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                  <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} style={{ flex:1, padding:'6px 10px', border:'1.5px solid #e2e8f0', borderRadius:8, fontSize:12.5, fontFamily:'inherit', outline:'none' }}/>
+                  <span style={{ color:'#94a3b8', fontSize:13 }}>–</span>
+                  <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} style={{ flex:1, padding:'6px 10px', border:'1.5px solid #e2e8f0', borderRadius:8, fontSize:12.5, fontFamily:'inherit', outline:'none' }}/>
+                </div>
+              </div>
             )}
           </div>
 
