@@ -15,7 +15,10 @@ const emptyForm = {
 
 const today     = new Date();
 const thirtyAgo = new Date(); thirtyAgo.setDate(today.getDate() - 30);
-const fmt8      = d => d instanceof Date ? d.toISOString().split('T')[0] : d;
+// use local date parts — toISOString() converts to UTC which gives yesterday in IST
+const fmt8      = d => d instanceof Date
+  ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+  : d;
 
 /* ── Inline styles ────────────────────────────────────────────── */
 const injectStyles = () => {
