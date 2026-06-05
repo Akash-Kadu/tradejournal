@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const NAV = [
@@ -11,25 +11,165 @@ const NAV = [
 ];
 
 const HamburgerIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
     <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
   </svg>
 );
 
+const CloseIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+  </svg>
+);
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768);
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+  return isMobile;
+}
+
 export default function Sidebar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sb_collapsed') === 'true');
+  const location = useLocation();
+  const isMobile = useIsMobile();
 
-  const toggle = () => {
-    const next = !collapsed;
-    setCollapsed(next);
-    localStorage.setItem('sb_collapsed', next);
-  };
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sb_collapsed') === 'true');
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Close drawer on route change
+  useEffect(() => { setMobileOpen(false); }, [location.pathname]);
+
+  // Lock body scroll when drawer is open
+  useEffect(() => {
+    if (isMobile) document.body.style.overflow = mobileOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [mobileOpen, isMobile]);
 
   const initials = user?.fullName?.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'U';
   const W = collapsed ? 62 : 196;
 
+  /* ── MOBILE ─────────────────────────────────────────────────
+     Renders a fixed top navbar (52px, not in flex flow) +
+     a fixed slide-in drawer + a dim overlay.
+     The page wrapper's flex layout is unaffected because all
+     three elements are position:fixed/absolute out of flow —
+     we add a 52px padding-top shim to the page via CSS.
+  ─────────────────────────────────────────────────────────── */
+  if (isMobile) {
+    return (
+      <>
+        {/* ── Fixed top navbar ── */}
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, height: 52,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '0 16px', background: '#fff',
+          borderBottom: '1px solid #e2e8f0', zIndex: 100,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{
+              width: 30, height: 30,
+              background: 'linear-gradient(135deg,#2563eb,#16a34a)',
+              borderRadius: 7, display: 'flex', alignItems: 'center',
+              justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 12,
+            }}>TJ</div>
+            <span style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>TradeJournal</span>
+          </div>
+          <button
+            onClick={() => setMobileOpen(true)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, borderRadius: 7, color: '#64748b', display: 'flex' }}
+            aria-label="Open menu"
+          ><HamburgerIcon /></button>
+        </div>
+
+        {/* ── Dim overlay ── */}
+        {mobileOpen && (
+          <div
+            onClick={() => setMobileOpen(false)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.4)', zIndex: 199 }}
+          />
+        )}
+
+        {/* ── Slide-in drawer ── */}
+        <aside style={{
+          position: 'fixed', top: 0, left: 0, height: '100vh', width: 240,
+          background: '#fff', borderRight: '1px solid #e2e8f0',
+          display: 'flex', flexDirection: 'column',
+          boxShadow: '4px 0 24px rgba(0,0,0,.13)', zIndex: 200,
+          transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)',
+          transition: 'transform .25s cubic-bezier(.4,0,.2,1)',
+        }}>
+          {/* Drawer header */}
+          <div style={{ padding: '14px 12px', display: 'flex', alignItems: 'center', borderBottom: '1px solid #f1f5f9', minHeight: 60, flexShrink: 0 }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: 9, flexShrink: 0,
+              background: 'linear-gradient(135deg,#2563eb,#16a34a)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#fff', fontWeight: 800, fontSize: 13,
+              boxShadow: '0 2px 8px rgba(37,99,235,.35)',
+            }}>TJ</div>
+            <div style={{ flex: 1, marginLeft: 8 }}>
+              <div style={{ fontWeight: 700, fontSize: 13.5, color: '#0f172a', lineHeight: 1.15 }}>TradeJournal</div>
+              <div style={{ fontSize: 9.5, color: '#94a3b8', marginTop: 1 }}>Track. Analyse. Improve.</div>
+            </div>
+            <button
+              onClick={() => setMobileOpen(false)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, borderRadius: 7, color: '#64748b', display: 'flex' }}
+              aria-label="Close menu"
+            ><CloseIcon /></button>
+          </div>
+
+          {/* Drawer nav */}
+          <nav style={{ flex: 1, padding: '10px 8px', overflowY: 'auto' }}>
+            {NAV.map(({ to, label, icon }) => (
+              <NavLink key={to} to={to} style={({ isActive }) => ({
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '10px 11px', borderRadius: 8, marginBottom: 3,
+                textDecoration: 'none', fontSize: 14, fontWeight: 500,
+                color: isActive ? '#2563eb' : '#64748b',
+                background: isActive ? '#eff6ff' : 'transparent',
+                borderLeft: isActive ? '3px solid #2563eb' : '3px solid transparent',
+              })}>
+                <span style={{ width: 17, height: 17, flexShrink: 0, display: 'flex' }}>{icon}</span>
+                <span>{label}</span>
+              </NavLink>
+            ))}
+
+            <div
+              onClick={async () => { await logout(); navigate('/login'); }}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 11px', borderRadius: 8, marginTop: 14, cursor: 'pointer', fontSize: 14, fontWeight: 500, color: '#64748b', borderLeft: '3px solid transparent' }}
+              onTouchStart={e => { e.currentTarget.style.background='#fef2f2'; e.currentTarget.style.color='#dc2626'; }}
+              onTouchEnd={e => { e.currentTarget.style.background='transparent'; e.currentTarget.style.color='#64748b'; }}
+            >
+              <span style={{ width: 17, height: 17, flexShrink: 0, display: 'flex' }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+              </span>
+              Logout
+            </div>
+          </nav>
+
+          {/* Drawer user */}
+          <div style={{ padding: '10px 8px', borderTop: '1px solid #f1f5f9', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '7px 8px', borderRadius: 8 }}>
+              <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg,#2563eb,#7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>{initials}</div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 12.5, fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 140 }}>{user?.fullName}</div>
+                <div style={{ fontSize: 10, color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 140 }}>{user?.email}</div>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </>
+    );
+  }
+
+  /* ── DESKTOP: original collapsible sidebar (unchanged) ───── */
   return (
     <aside style={{
       width: W, minHeight: '100vh', background: '#fff',
@@ -39,110 +179,42 @@ export default function Sidebar() {
       transition: 'width .22s cubic-bezier(.4,0,.2,1)', overflow: 'visible', flexShrink: 0,
     }}>
 
-      {/* ── Logo + hamburger ── */}
       <div style={{ padding: '14px 12px', display: 'flex', alignItems: 'center', borderBottom: '1px solid #f1f5f9', minHeight: 60, flexShrink: 0, position: 'relative', overflow: 'hidden' }}>
-
-        {/* Logo — always rendered, hidden when collapsed */}
-        <div style={{
-          width: 32, height: 32, borderRadius: 9, flexShrink: 0,
-          background: 'linear-gradient(135deg,#2563eb,#16a34a)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: '#fff', fontWeight: 800, fontSize: 13, letterSpacing: '-.5px',
-          boxShadow: '0 2px 8px rgba(37,99,235,.35)',
-          opacity: collapsed ? 0 : 1, transition: 'opacity .2s',
-          pointerEvents: 'none',
-        }}>TJ</div>
-
+        <div style={{ width: 32, height: 32, borderRadius: 9, flexShrink: 0, background: 'linear-gradient(135deg,#2563eb,#16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 13, letterSpacing: '-.5px', boxShadow: '0 2px 8px rgba(37,99,235,.35)', opacity: collapsed ? 0 : 1, transition: 'opacity .2s', pointerEvents: 'none' }}>TJ</div>
         <div style={{ flex: 1, minWidth: 0, overflow: 'hidden', opacity: collapsed ? 0 : 1, transition: 'opacity .15s', marginLeft: 8 }}>
           <div style={{ fontWeight: 700, fontSize: 13.5, color: '#0f172a', lineHeight: 1.15, whiteSpace: 'nowrap' }}>TradeJournal</div>
           <div style={{ fontSize: 9.5, color: '#94a3b8', marginTop: 1, whiteSpace: 'nowrap' }}>Track. Analyse. Improve.</div>
         </div>
-
-        {/* Hamburger — always visible, absolutely positioned when collapsed */}
-        <button onClick={toggle}
-          style={{
-            background: 'none', border: 'none', cursor: 'pointer', padding: '6px',
-            borderRadius: 7, color: '#64748b', flexShrink: 0,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            transition: 'background .15s, color .15s',
-            position: collapsed ? 'absolute' : 'relative',
-            left: collapsed ? '50%' : 'auto',
-            transform: collapsed ? 'translateX(-50%)' : 'none',
-          }}
+        <button onClick={toggle} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px', borderRadius: 7, color: '#64748b', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background .15s, color .15s', position: collapsed ? 'absolute' : 'relative', left: collapsed ? '50%' : 'auto', transform: collapsed ? 'translateX(-50%)' : 'none' }}
           onMouseEnter={e => { e.currentTarget.style.background='#f1f5f9'; e.currentTarget.style.color='#0f172a'; }}
           onMouseLeave={e => { e.currentTarget.style.background='none'; e.currentTarget.style.color='#64748b'; }}
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        ><HamburgerIcon/></button>
+        ><HamburgerIcon /></button>
       </div>
 
-      {/* ── Nav ── */}
       <nav style={{ flex: 1, padding: '10px 8px', overflowY: 'auto', overflowX: 'hidden' }}>
         {NAV.map(({ to, label, icon }) => (
-          <NavLink key={to} to={to} title={collapsed ? label : ''} style={({ isActive }) => ({
-            display: 'flex', alignItems: 'center',
-            gap: collapsed ? 0 : 10,
-            justifyContent: collapsed ? 'center' : 'flex-start',
-            padding: collapsed ? '9px 0' : '8px 11px',
-            borderRadius: 8, marginBottom: 3,
-            textDecoration: 'none', fontSize: 13.5, fontWeight: 500,
-            color: isActive ? '#2563eb' : '#64748b',
-            background: isActive ? '#eff6ff' : 'transparent',
-            borderLeft: isActive ? '3px solid #2563eb' : '3px solid transparent',
-            transition: 'all .15s ease',
-            whiteSpace: 'nowrap', overflow: 'hidden',
-          })}>
+          <NavLink key={to} to={to} title={collapsed ? label : ''} style={({ isActive }) => ({ display: 'flex', alignItems: 'center', gap: collapsed ? 0 : 10, justifyContent: collapsed ? 'center' : 'flex-start', padding: collapsed ? '9px 0' : '8px 11px', borderRadius: 8, marginBottom: 3, textDecoration: 'none', fontSize: 13.5, fontWeight: 500, color: isActive ? '#2563eb' : '#64748b', background: isActive ? '#eff6ff' : 'transparent', borderLeft: isActive ? '3px solid #2563eb' : '3px solid transparent', transition: 'all .15s ease', whiteSpace: 'nowrap', overflow: 'hidden' })}>
             <span style={{ width: 17, height: 17, flexShrink: 0, display: 'flex' }}>{icon}</span>
             {!collapsed && <span style={{ opacity: collapsed ? 0 : 1, transition: 'opacity .15s' }}>{label}</span>}
           </NavLink>
         ))}
-
-        {/* Logout */}
-        <div
-          onClick={async () => { await logout(); navigate('/login'); }}
-          title={collapsed ? 'Logout' : ''}
-          style={{
-            display: 'flex', alignItems: 'center',
-            gap: collapsed ? 0 : 10,
-            justifyContent: collapsed ? 'center' : 'flex-start',
-            padding: collapsed ? '9px 0' : '8px 11px',
-            borderRadius: 8, marginTop: 14,
-            cursor: 'pointer', fontSize: 13.5, fontWeight: 500,
-            color: '#64748b', borderLeft: '3px solid transparent',
-            transition: 'all .15s', whiteSpace: 'nowrap', overflow: 'hidden',
-          }}
+        <div onClick={async () => { await logout(); navigate('/login'); }} title={collapsed ? 'Logout' : ''} style={{ display: 'flex', alignItems: 'center', gap: collapsed ? 0 : 10, justifyContent: collapsed ? 'center' : 'flex-start', padding: collapsed ? '9px 0' : '8px 11px', borderRadius: 8, marginTop: 14, cursor: 'pointer', fontSize: 13.5, fontWeight: 500, color: '#64748b', borderLeft: '3px solid transparent', transition: 'all .15s', whiteSpace: 'nowrap', overflow: 'hidden' }}
           onMouseEnter={e => { e.currentTarget.style.background='#fef2f2'; e.currentTarget.style.color='#dc2626'; }}
           onMouseLeave={e => { e.currentTarget.style.background='transparent'; e.currentTarget.style.color='#64748b'; }}
         >
-          <span style={{ width: 17, height: 17, flexShrink: 0, display: 'flex' }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-              <polyline points="16 17 21 12 16 7"/>
-              <line x1="21" y1="12" x2="9" y2="12"/>
-            </svg>
-          </span>
+          <span style={{ width: 17, height: 17, flexShrink: 0, display: 'flex' }}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span>
           {!collapsed && 'Logout'}
         </div>
       </nav>
 
-      {/* ── User ── */}
       <div style={{ padding: '10px 8px', borderTop: '1px solid #f1f5f9', flexShrink: 0 }}>
-        <div style={{
-          display: 'flex', alignItems: 'center',
-          gap: collapsed ? 0 : 9,
-          justifyContent: collapsed ? 'center' : 'flex-start',
-          padding: '7px 8px', borderRadius: 8, cursor: 'pointer',
-          transition: 'background .15s',
-        }}
+        <div style={{ display: 'flex', alignItems: 'center', gap: collapsed ? 0 : 9, justifyContent: collapsed ? 'center' : 'flex-start', padding: '7px 8px', borderRadius: 8, cursor: 'pointer', transition: 'background .15s' }}
           onMouseEnter={e => e.currentTarget.style.background='#f8fafc'}
           onMouseLeave={e => e.currentTarget.style.background='transparent'}
           title={collapsed ? (user?.fullName || '') : ''}
         >
-          <div style={{
-            width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg,#2563eb,#7c3aed)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0,
-            boxShadow: '0 1px 4px rgba(37,99,235,.3)',
-          }}>{initials}</div>
+          <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg,#2563eb,#7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0, boxShadow: '0 1px 4px rgba(37,99,235,.3)' }}>{initials}</div>
           {!collapsed && (
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 12.5, fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 110 }}>{user?.fullName}</div>
