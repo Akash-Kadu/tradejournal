@@ -10,7 +10,10 @@ import api        from '../services/api';
 
 const today       = new Date();
 const startOfYear = new Date(today.getFullYear(), 0, 1); // Jan 1 of current year = YTD
-const fmt8        = d => d instanceof Date ? d.toISOString().split('T')[0] : d;
+// use local date parts — toISOString() converts to UTC which gives yesterday in IST
+const fmt8        = d => d instanceof Date
+  ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+  : d;
 const MONTHS      = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DAY_HDR     = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
