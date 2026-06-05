@@ -75,6 +75,7 @@ public class TradeServiceImpl implements TradeService {
                 .account(account)
                 .session(request.getSession())
                 .strategy(strategy)
+                .pair(request.getPair())          // ← ADDED: saves pair to DB
                 .qty(request.getQty())
                 .rr(request.getRr())
                 .riskPercent(request.getRiskPercent())
@@ -107,6 +108,7 @@ public class TradeServiceImpl implements TradeService {
         trade.setAccount(account);
         trade.setSession(request.getSession());
         trade.setStrategy(strategy);
+        trade.setPair(request.getPair());          // ← ADDED: updates pair in DB
         trade.setQty(request.getQty());
         trade.setRr(request.getRr());
         trade.setRiskPercent(request.getRiskPercent());
