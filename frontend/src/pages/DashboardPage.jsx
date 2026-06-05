@@ -328,11 +328,13 @@ export default function DashboardPage() {
     const abs = Math.abs(v);
     const sign = v < 0 ? '-' : '';
     if (showUSD) {
-      const usd = abs / usdRate;
-      const fmt = usd >= 1000 ? usd.toLocaleString('en-US', {minimumFractionDigits:0,maximumFractionDigits:0}) : usd.toFixed(2);
+      // value is stored as USD — display as-is
+      const fmt = abs >= 1000 ? abs.toLocaleString('en-US', {minimumFractionDigits:0,maximumFractionDigits:0}) : abs.toFixed(2);
       return `${sign}$${fmt}`;
     }
-    const fmt = abs >= 1000 ? abs.toLocaleString('en-IN',{minimumFractionDigits:0,maximumFractionDigits:0}) : abs.toFixed(0);
+    // convert USD → INR by multiplying
+    const inr = abs * usdRate;
+    const fmt = inr >= 1000 ? inr.toLocaleString('en-IN',{minimumFractionDigits:0,maximumFractionDigits:0}) : inr.toFixed(0);
     return `${sign}₹${fmt}`;
   };
   const sym  = showUSD ? '$' : '₹';
@@ -693,8 +695,9 @@ export default function DashboardPage() {
                     height={growthChart.length > 14 ? 36 : 20}/>
                   <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickCount={6}
                     tickFormatter={v => {
-                      if (showUSD) { const u = v/usdRate; return `$${Math.abs(u)>=1000?`${(u/1000).toFixed(0)}k`:u.toFixed(0)}`; }
-                      return `₹${Math.abs(v)>=1000?`${(v/1000).toFixed(0)}k`:v}`;
+                      if (showUSD) { return `$${Math.abs(v)>=1000?`${(v/1000).toFixed(0)}k`:v.toFixed(0)}`; }
+                      const inr = v * usdRate;
+                      return `₹${Math.abs(inr)>=1000?`${(inr/1000).toFixed(0)}k`:inr.toFixed(0)}`;
                     }}/>
                   <ReferenceLine y={0} stroke="#cbd5e1" strokeDasharray="4 3"/>
                   <Tooltip
