@@ -17,7 +17,7 @@ const today     = new Date();
 const thirtyAgo = new Date(); thirtyAgo.setDate(today.getDate() - 30);
 const fmt8      = d => d instanceof Date ? d.toISOString().split('T')[0] : d;
 
-/* ── Inline styles injected once ─────────────────────────────── */
+/* ── Inline styles ────────────────────────────────────────────── */
 const injectStyles = () => {
   if (document.getElementById('tp-styles')) return;
   const s = document.createElement('style');
@@ -50,23 +50,20 @@ const injectStyles = () => {
       background:#fff; border:1px solid #e2e8f0; border-radius:8px;
       padding:6px 12px; font-size:12.5px; font-weight:600;
       color:#374151; cursor:pointer; white-space:nowrap;
-      transition:background .15s, border-color .15s;
-      position:relative;
+      transition:background .15s, border-color .15s; position:relative;
     }
     .tp-filter-btn:hover { background:#f8fafc; border-color:#cbd5e1; }
     .tp-filter-btn.active { border-color:#2563eb; color:#2563eb; background:#eff6ff; }
     .tp-filter-badge {
       min-width:16px; height:16px; border-radius:99px;
       background:#2563eb; color:#fff; font-size:10px;
-      font-weight:700; display:flex; align-items:center;
-      justify-content:center; padding:0 4px;
+      font-weight:700; display:flex; align-items:center; justify-content:center; padding:0 4px;
     }
     .tp-filter-panel {
       position:absolute; top:calc(100% + 6px); right:0;
       background:#fff; border:1px solid #e2e8f0; border-radius:12px;
       box-shadow:0 8px 28px rgba(0,0,0,.12); z-index:100;
-      padding:14px; min-width:320px;
-      animation:tpFadeDown .18s ease;
+      padding:14px; min-width:320px; animation:tpFadeDown .18s ease;
     }
     @keyframes tpFadeDown {
       from { opacity:0; transform:translateY(-6px); }
@@ -86,15 +83,13 @@ const injectStyles = () => {
     .tp-date-wrap {
       display:flex; align-items:center; gap:6px;
       background:#fff; border:1px solid #e2e8f0; border-radius:8px;
-      padding:6px 12px; font-size:12.5px; cursor:pointer;
-      position:relative;
+      padding:6px 12px; font-size:12.5px; cursor:pointer; position:relative;
     }
     .tp-date-panel {
       position:absolute; top:calc(100% + 6px); left:0;
       background:#fff; border:1px solid #e2e8f0; border-radius:12px;
       box-shadow:0 8px 28px rgba(0,0,0,.12); z-index:100;
-      padding:12px 14px; min-width:300px;
-      animation:tpFadeDown .18s ease;
+      padding:12px 14px; min-width:300px; animation:tpFadeDown .18s ease;
     }
     .tp-quick-btns { display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap; }
     .tp-quick-btn {
@@ -106,11 +101,43 @@ const injectStyles = () => {
     .tp-date-inputs { display:flex; align-items:center; gap:8px; }
     .tp-date-inputs input {
       border:1.5px solid #e2e8f0; border-radius:8px; padding:6px 10px;
-      font-size:12.5px; font-family:inherit; outline:none; flex:1;
-      transition:border-color .2s;
+      font-size:12.5px; font-family:inherit; outline:none; flex:1; transition:border-color .2s;
     }
     .tp-date-inputs input:focus { border-color:#2563eb; }
-    .tp-backdrop { position:fixed; inset:0; z-index:90; }
+
+    /* ── Bulk action bar ── */
+    .tp-bulk-bar {
+      display:flex; align-items:center; gap:10px;
+      background:#1e293b; color:#fff;
+      padding:10px 16px; border-radius:10px;
+      margin-bottom:10px; font-size:13px;
+      animation:tpFadeDown .2s ease;
+    }
+    .tp-bulk-bar-count {
+      font-weight:700; color:#94a3b8; font-size:12px;
+    }
+    .tp-bulk-del-btn {
+      display:flex; align-items:center; gap:6px;
+      background:#dc2626; color:#fff; border:none;
+      padding:6px 14px; border-radius:7px; font-size:12.5px;
+      font-weight:600; font-family:inherit; cursor:pointer;
+      transition:background .15s;
+    }
+    .tp-bulk-del-btn:hover { background:#b91c1c; }
+    .tp-bulk-cancel-btn {
+      background:transparent; color:#94a3b8; border:1px solid #334155;
+      padding:6px 12px; border-radius:7px; font-size:12.5px;
+      font-weight:600; font-family:inherit; cursor:pointer;
+      transition:color .15s, border-color .15s;
+    }
+    .tp-bulk-cancel-btn:hover { color:#fff; border-color:#64748b; }
+
+    /* ── Checkbox ── */
+    .tp-cb {
+      width:15px; height:15px; accent-color:#2563eb; cursor:pointer; flex-shrink:0;
+    }
+    /* selected row highlight */
+    tr.tp-row-sel { background:#eff6ff !important; }
   `;
   document.head.appendChild(s);
 };
@@ -244,11 +271,15 @@ export default function TradesPage() {
   const [usdRate,    setUsdRate]    = useState(84);
   const [filterOpen, setFilterOpen] = useState(false);
   const [filters,    setFilters]    = useState({ accounts:[], strategies:[], sessions:[], days:[] });
+
+  // ── Multi-select state ──
+  const [selected,     setSelected]     = useState(new Set()); // Set of srNo
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+
   const filterRef = useRef();
 
   useEffect(() => { injectStyles(); }, []);
 
-  /* Live exchange rate */
   useEffect(() => {
     fetch('https://api.exchangerate-api.com/v4/latest/USD')
       .then(r => r.json())
@@ -256,7 +287,6 @@ export default function TradesPage() {
       .catch(() => {});
   }, []);
 
-  /* Close filter on outside click */
   useEffect(() => {
     const h = e => { if (filterRef.current && !filterRef.current.contains(e.target)) setFilterOpen(false); };
     document.addEventListener('mousedown', h);
@@ -266,6 +296,7 @@ export default function TradesPage() {
   const fetchTrades = useCallback(async () => {
     const r = await api.get('/trades', { params: { startDate, endDate } });
     setTrades(r.data.data || []);
+    setSelected(new Set()); // clear selection on refresh
   }, [startDate, endDate]);
 
   useEffect(() => { fetchTrades(); }, [fetchTrades]);
@@ -304,7 +335,6 @@ export default function TradesPage() {
         qty:          Number(form.qty),
         rr:           Number(form.rr),
         riskPercent:  Number(form.riskPercent),
-        // resultDollar is entered and stored as USD — no conversion
         resultDollar: Number(form.resultDollar),
       };
       if (editing) await api.put(`/trades/${editing}`, body);
@@ -316,6 +346,7 @@ export default function TradesPage() {
     } finally { setLoading(false); }
   };
 
+  // ── Single delete ──
   const handleDelete = async srNo => {
     if (!window.confirm('Delete this trade?')) return;
     try {
@@ -324,16 +355,46 @@ export default function TradesPage() {
     } catch (err) { showToast(err.response?.data?.message || 'Error', 'error'); }
   };
 
-  /* ── Currency display helpers ─────────────────────────────────
-     resultDollar is always stored as USD.
-     - USD mode: show as-is with $ symbol
-     - INR mode: multiply by usdRate, show with ₹ symbol
-  ── */
-  const sym  = currency === 'USD' ? '$' : '₹';
-  const conv = v => {
-    if (v == null) return 0;
-    return currency === 'USD' ? v : v * usdRate;   // USD stored → multiply for INR display
+  // ── Bulk delete ──
+  const handleBulkDelete = async () => {
+    if (!window.confirm(`Delete ${selected.size} selected trade${selected.size > 1 ? 's' : ''}? This cannot be undone.`)) return;
+    setBulkDeleting(true);
+    try {
+      // delete one by one sequentially so account balances update correctly
+      for (const srNo of selected) {
+        await api.delete(`/trades/${srNo}`);
+      }
+      showToast(`${selected.size} trade${selected.size > 1 ? 's' : ''} deleted!`);
+      fetchTrades();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Error deleting trades', 'error');
+      fetchTrades(); // refresh even on partial failure
+    } finally { setBulkDeleting(false); }
   };
+
+  // ── Checkbox helpers ──
+  const toggleOne = srNo => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      next.has(srNo) ? next.delete(srNo) : next.add(srNo);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    // toggle based on visible (sorted/filtered) rows
+    if (selected.size === sorted.length && sorted.length > 0) {
+      setSelected(new Set()); // deselect all
+    } else {
+      setSelected(new Set(sorted.map(t => t.srNo))); // select all visible
+    }
+  };
+
+  const clearSelection = () => setSelected(new Set());
+
+  // ── Currency helpers ──
+  const sym  = currency === 'USD' ? '$' : '₹';
+  const conv = v => { if (v == null) return 0; return currency === 'USD' ? v : v * usdRate; };
   const fmtM = v => {
     const cv   = conv(v);
     const sign = cv < 0 ? '-' : '';
@@ -344,7 +405,7 @@ export default function TradesPage() {
     return `${sign}${sym}${str}`;
   };
 
-  /* Filtering */
+  // ── Filtering ──
   const activeFiltersCount = Object.values(filters).reduce((n, arr) => n + arr.length, 0);
   const filtered = trades.filter(t => {
     if (filters.accounts.length   && !filters.accounts.includes(String(t.accountSrNo)))    return false;
@@ -354,12 +415,15 @@ export default function TradesPage() {
     return true;
   });
 
-  /* Sorting */
+  // ── Sorting ──
   const sorted = [...filtered].sort((a, b) => {
     const va = a[sortField] ?? 0, vb = b[sortField] ?? 0;
     if (sortField === 'date') return sortAsc ? new Date(va) - new Date(vb) : new Date(vb) - new Date(va);
     return sortAsc ? va - vb : vb - va;
   });
+
+  const allVisibleSelected = sorted.length > 0 && selected.size === sorted.length;
+  const someSelected       = selected.size > 0 && !allVisibleSelected;
 
   const toggleSort = field => {
     if (sortField === field) setSortAsc(!sortAsc);
@@ -379,16 +443,9 @@ export default function TradesPage() {
 
         {/* ── Header ────────────────────────────────────────────── */}
         <div style={{ display:'flex', alignItems:'center', marginBottom:16, gap:10, flexWrap:'wrap' }}>
-
           <h1 className="page-title" style={{ margin:0, flexShrink:0 }}>Trades</h1>
-
-          <DateRangePicker
-            startDate={startDate} endDate={endDate}
-            onStart={setStartDate} onEnd={setEndDate}
-          />
-
+          <DateRangePicker startDate={startDate} endDate={endDate} onStart={setStartDate} onEnd={setEndDate}/>
           <div style={{ flex:1 }}/>
-
           <CurrencyToggle currency={currency} onChange={setCurrency} usdRate={usdRate}/>
 
           {/* Sort */}
@@ -403,27 +460,21 @@ export default function TradesPage() {
             <button className="icon-btn" onClick={() => setSortAsc(!sortAsc)} title="Toggle sort direction"
               style={{ background:'#fff', border:'1px solid #e2e8f0' }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2">
-                {sortAsc
-                  ? <><path d="M12 5v14"/><path d="M5 12l7-7 7 7"/></>
-                  : <><path d="M12 5v14"/><path d="M5 12l7 7 7-7"/></>}
+                {sortAsc ? <><path d="M12 5v14"/><path d="M5 12l7-7 7 7"/></> : <><path d="M12 5v14"/><path d="M5 12l7 7 7-7"/></>}
               </svg>
             </button>
           </div>
 
           {/* Filter */}
           <div style={{ position:'relative' }} ref={filterRef}>
-            <button
-              className={`tp-filter-btn${activeFiltersCount > 0 ? ' active' : ''}`}
-              onClick={() => setFilterOpen(o => !o)}
-            >
+            <button className={`tp-filter-btn${activeFiltersCount > 0 ? ' active' : ''}`} onClick={() => setFilterOpen(o => !o)}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
               Filter
               {activeFiltersCount > 0 && <span className="tp-filter-badge">{activeFiltersCount}</span>}
             </button>
             {filterOpen && (
               <FilterPanel
-                accounts={accounts} strategies={strategies}
-                filters={filters}
+                accounts={accounts} strategies={strategies} filters={filters}
                 onChange={(key, val) => setFilters(f => ({ ...f, [key]: val }))}
                 onClear={() => setFilters({ accounts:[], strategies:[], sessions:[], days:[] })}
                 onClose={() => setFilterOpen(false)}
@@ -449,11 +500,7 @@ export default function TradesPage() {
                   days:       dayLbl(v),
                 };
                 return (
-                  <span key={`${key}-${v}`} style={{
-                    display:'flex', alignItems:'center', gap:5,
-                    padding:'3px 10px', borderRadius:99, fontSize:12,
-                    background:'#eff6ff', border:'1px solid #bfdbfe', color:'#2563eb', fontWeight:500,
-                  }}>
+                  <span key={`${key}-${v}`} style={{ display:'flex', alignItems:'center', gap:5, padding:'3px 10px', borderRadius:99, fontSize:12, background:'#eff6ff', border:'1px solid #bfdbfe', color:'#2563eb', fontWeight:500 }}>
                     {labelMap[key] || v}
                     <span style={{ cursor:'pointer', opacity:.7, fontWeight:700, fontSize:14, lineHeight:1 }}
                       onClick={() => setFilters(f => ({ ...f, [key]: f[key].filter(x => x !== v) }))}>×</span>
@@ -468,15 +515,43 @@ export default function TradesPage() {
           </div>
         )}
 
+        {/* ── Bulk action bar — appears when rows are selected ── */}
+        {selected.size > 0 && (
+          <div className="tp-bulk-bar">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
+            <span className="tp-bulk-bar-count">{selected.size} trade{selected.size > 1 ? 's' : ''} selected</span>
+            <div style={{ flex:1 }}/>
+            <button className="tp-bulk-del-btn" onClick={handleBulkDelete} disabled={bulkDeleting}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+              {bulkDeleting ? 'Deleting…' : `Delete ${selected.size} trade${selected.size > 1 ? 's' : ''}`}
+            </button>
+            <button className="tp-bulk-cancel-btn" onClick={clearSelection}>Cancel</button>
+          </div>
+        )}
+
         {/* ── Table ─────────────────────────────────────────────── */}
         <div className="card">
-          <div style={{ padding:'8px 14px', borderBottom:'1px solid #f1f5f9', fontSize:12, color:'#64748b' }}>
+          <div style={{ padding:'8px 14px', borderBottom:'1px solid #f1f5f9', fontSize:12, color:'#64748b', display:'flex', alignItems:'center', gap:8 }}>
             Showing <strong style={{ color:'#0f172a' }}>{sorted.length}</strong> of {trades.length} trades
+            {selected.size > 0 && (
+              <span style={{ marginLeft:4, color:'#2563eb', fontWeight:600 }}>· {selected.size} selected</span>
+            )}
           </div>
           <div className="table-wrap">
             <table>
               <thead>
                 <tr>
+                  {/* Select-all checkbox */}
+                  <th style={{ width:36, textAlign:'center' }}>
+                    <input
+                      type="checkbox"
+                      className="tp-cb"
+                      checked={allVisibleSelected}
+                      ref={el => { if (el) el.indeterminate = someSelected; }}
+                      onChange={toggleAll}
+                      title="Select all visible"
+                    />
+                  </th>
                   <th>Sr No</th>
                   <th style={{ cursor:'pointer' }} onClick={() => toggleSort('date')}>
                     <span style={{ display:'flex', alignItems:'center', gap:4 }}>Date {sortIcon('date')}</span>
@@ -504,10 +579,19 @@ export default function TradesPage() {
               </thead>
               <tbody>
                 {sorted.length === 0 && (
-                  <tr><td colSpan={13} style={{ textAlign:'center', color:'#94a3b8', padding:36 }}>No trades found.</td></tr>
+                  <tr><td colSpan={14} style={{ textAlign:'center', color:'#94a3b8', padding:36 }}>No trades found.</td></tr>
                 )}
                 {sorted.map((t, i) => (
-                  <tr key={t.srNo}>
+                  <tr key={t.srNo} className={selected.has(t.srNo) ? 'tp-row-sel' : ''}>
+                    {/* Row checkbox */}
+                    <td style={{ textAlign:'center' }}>
+                      <input
+                        type="checkbox"
+                        className="tp-cb"
+                        checked={selected.has(t.srNo)}
+                        onChange={() => toggleOne(t.srNo)}
+                      />
+                    </td>
                     <td style={{ color:'#94a3b8' }}>{i + 1}</td>
                     <td style={{ fontWeight:500 }}>{t.date}</td>
                     <td style={{ color:'#64748b' }}>{dayLbl(t.day)}</td>
@@ -523,7 +607,6 @@ export default function TradesPage() {
                         {t.strategy}
                       </div>
                     </td>
-                    {/* Pair column — shows "—" if not set (older trades) */}
                     <td style={{ fontFamily:'inherit', fontSize:13.5 }}>
                       {t.pair || <span style={{ color:'#cbd5e1' }}>—</span>}
                     </td>
@@ -540,7 +623,7 @@ export default function TradesPage() {
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         </button>
                         <button className="icon-btn del" onClick={() => handleDelete(t.srNo)} title="Delete">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6\"/><path d=\"M10 11v6\"/><path d=\"M14 11v6\"/><path d=\"M9 6V4h6v2\"/></svg>
                         </button>
                       </div>
                     </td>
@@ -582,7 +665,6 @@ export default function TradesPage() {
                       {strategies.map(s => <option key={s.srNo} value={s.srNo}>{s.strategyName}</option>)}
                     </select>
                   </div>
-                  {/* Pair field — e.g. XAUUSD, NAS100, EURUSD */}
                   <div className="form-group">
                     <label>Pair</label>
                     <input type="text" placeholder="e.g. XAUUSD, NAS100" value={form.pair}
@@ -610,7 +692,6 @@ export default function TradesPage() {
                     <input type="number" required step="0.01" placeholder="e.g. 1.0" value={form.riskPercent}
                       onChange={e => setForm({...form, riskPercent: e.target.value})}/>
                   </div>
-                  {/* Result is always entered and stored in USD */}
                   <div className="form-group full">
                     <label>Result in USD (negative for loss)</label>
                     <div style={{ position:'relative' }}>
