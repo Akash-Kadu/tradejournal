@@ -16,7 +16,7 @@ import com.tradejournal.repository.TradeRepository;
 import com.tradejournal.service.TradeService;
 import com.tradejournal.util.SessionUtil;
 import jakarta.servlet.http.HttpSession;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.time.DayOfWeek;
@@ -84,13 +84,15 @@ public class TradeServiceImpl implements TradeService {
                 .resultPercent(resultPercent)
                 .build();
 
-        // ── UPDATE ACCOUNT BALANCE ──
-        // Add trade result to current balance; changeDollar/changePercent
-        // are recalculated automatically in AccountMapper from currentBalance - accountSize
+        // ── SAVE TRADE FIRST, then update account balance ──
+        // Trade must persist successfully before we touch the account.
+        // This prevents orphaned balance updates if the trade insert fails.
+        Trade savedTrade = tradeRepository.save(trade);
+
         account.setCurrentBalance(round(account.getCurrentBalance() + request.getResultDollar()));
         accountRepository.save(account);
 
-        return tradeMapper.toResponse(tradeRepository.save(trade));
+        return tradeMapper.toResponse(savedTrade);
     }
 
     @Override
@@ -150,12 +152,13 @@ public class TradeServiceImpl implements TradeService {
         if (!trade.getUser().getId().equals(user.getId()))
             throw new BadRequestException("You are not authorized to delete this trade");
 
-        // ── REVERSE ACCOUNT BALANCE on delete ──
+        // ── DELETE TRADE FIRST, then reverse account balance ──
         Account account = trade.getAccount();
-        account.setCurrentBalance(round(account.getCurrentBalance() - trade.getResultDollar()));
-        accountRepository.save(account);
-
+        double resultToReverse = trade.getResultDollar();
         tradeRepository.delete(trade);
+
+        account.setCurrentBalance(round(account.getCurrentBalance() - resultToReverse));
+        accountRepository.save(account);
     }
 
     private TradingDay mapTradingDay(DayOfWeek dow) {
