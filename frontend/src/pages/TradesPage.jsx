@@ -132,6 +132,21 @@ const injectStyles = () => {
     }
     .tp-bulk-cancel-btn:hover { color:#fff; border-color:#64748b; }
 
+    /* ── Mobile responsive ── */
+    @media (max-width: 768px) {
+      .tp-filter-panel {
+        position: fixed; top: auto; bottom: 0; left: 0; right: 0;
+        border-radius: 16px 16px 0 0; min-width: unset; width: 100%;
+        box-shadow: 0 -8px 28px rgba(0,0,0,.15);
+        max-height: 80vh; overflow-y: auto;
+      }
+      .tp-date-panel {
+        position: fixed; top: auto; bottom: 0; left: 0; right: 0;
+        border-radius: 16px 16px 0 0; min-width: unset; width: 100%;
+        box-shadow: 0 -8px 28px rgba(0,0,0,.15);
+      }
+    }
+
     /* ── Checkbox ── */
     .tp-cb {
       width:15px; height:15px; accent-color:#2563eb; cursor:pointer; flex-shrink:0;
@@ -443,7 +458,7 @@ export default function TradesPage() {
 
         {/* ── Header ────────────────────────────────────────────── */}
         <div style={{ display:'flex', alignItems:'center', marginBottom:16, gap:10, flexWrap:'wrap' }}>
-          <h1 className="page-title" style={{ margin:0, flexShrink:0 }}>Trades</h1>
+          <h1 className="page-title" style={{ margin:0, flexShrink:0, width:'100%' }}>Trades</h1>
           <DateRangePicker startDate={startDate} endDate={endDate} onStart={setStartDate} onEnd={setEndDate}/>
           <div style={{ flex:1 }}/>
           <CurrencyToggle currency={currency} onChange={setCurrency} usdRate={usdRate}/>
@@ -637,7 +652,7 @@ export default function TradesPage() {
         {/* ── Add/Edit Modal ─────────────────────────────────────── */}
         {modal && (
           <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setModal(false)}>
-            <div className="modal" style={{ width:520 }}>
+            <div className="modal">
               <h3>{editing ? 'Edit Trade' : 'Add Trade'}</h3>
               <form onSubmit={handleSave}>
                 <div className="form-grid">
