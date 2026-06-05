@@ -291,11 +291,11 @@ export default function StrategyPage() {
   /* inject styles once */
   useEffect(() => { injectStyles(); }, []);
 
-  /* fetch live INR→USD rate */
+  /* fetch live USD→INR rate */
   useEffect(() => {
-    fetch('https://api.exchangerate-api.com/v4/latest/INR')
+    fetch('https://api.exchangerate-api.com/v4/latest/USD')
       .then(r => r.json())
-      .then(d => { if (d?.rates?.USD) setRate(1 / d.rates.USD); })
+      .then(d => { if (d?.rates?.INR) setRate(d.rates.INR); })
       .catch(() => {}); // silently use fallback
   }, []);
 
@@ -341,10 +341,12 @@ export default function StrategyPage() {
     const sign = v < 0 ? '-' : '';
     const num = Math.abs(v);
     if (usd) {
-      const converted = (num / rate).toFixed(2);
-      return `${sign}$${Number(converted).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+      // value stored as USD — show as-is
+      return `${sign}$${num >= 1000 ? num.toLocaleString('en-US', { minimumFractionDigits: 2 }) : num.toFixed(2)}`;
     }
-    return `${sign}₹${num.toLocaleString('en-IN', { minimumFractionDigits: 0 })}`;
+    // convert USD → INR by multiplying
+    const inr = num * rate;
+    return `${sign}₹${inr >= 1000 ? inr.toLocaleString('en-IN', { minimumFractionDigits: 0 }) : inr.toFixed(0)}`;
   };
 
   /* dynamic color theme based on totalEarned */
