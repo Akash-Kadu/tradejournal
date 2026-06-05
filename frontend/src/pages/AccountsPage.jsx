@@ -78,7 +78,7 @@ export default function AccountsPage() {
 
         {/* toolbar */}
         <div className="toolbar">
-          <input className="search-input" placeholder="Search by prop firm…" value={filterProp} onChange={e => setFilterProp(e.target.value)} style={{ width:220 }}/>
+          <input className="search-input" placeholder="Search by prop firm…" value={filterProp} onChange={e => setFilterProp(e.target.value)} />
           <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={{ padding:'8px 11px', border:'1px solid #e2e8f0', borderRadius:8, fontSize:13.5, fontFamily:'inherit', outline:'none' }}>
             <option value="">All Status</option>
             {STATUS_OPTIONS.map(s => <option key={s} value={s}>{statusLabel(s)}</option>)}
