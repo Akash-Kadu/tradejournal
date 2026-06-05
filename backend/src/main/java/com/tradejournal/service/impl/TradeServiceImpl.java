@@ -75,7 +75,7 @@ public class TradeServiceImpl implements TradeService {
                 .account(account)
                 .session(request.getSession())
                 .strategy(strategy)
-                .pair(request.getPair())          // ← ADDED: saves pair to DB
+                .pair(request.getPair())
                 .qty(request.getQty())
                 .rr(request.getRr())
                 .riskPercent(request.getRiskPercent())
@@ -83,6 +83,12 @@ public class TradeServiceImpl implements TradeService {
                 .resultDollar(request.getResultDollar())
                 .resultPercent(resultPercent)
                 .build();
+
+        // ── UPDATE ACCOUNT BALANCE ──
+        // Add trade result to current balance; changeDollar/changePercent
+        // are recalculated automatically in AccountMapper from currentBalance - accountSize
+        account.setCurrentBalance(round(account.getCurrentBalance() + request.getResultDollar()));
+        accountRepository.save(account);
 
         return tradeMapper.toResponse(tradeRepository.save(trade));
     }
@@ -94,6 +100,10 @@ public class TradeServiceImpl implements TradeService {
                 .orElseThrow(() -> new ResourceNotFoundException("Trade not found with id: " + srNo));
         if (!trade.getUser().getId().equals(user.getId()))
             throw new BadRequestException("You are not authorized to update this trade");
+
+        // Keep old values before overwriting
+        Account oldAccount      = trade.getAccount();
+        double  oldResultDollar = trade.getResultDollar();
 
         Account account = accountRepository.findById(request.getAccountSrNo())
                 .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
@@ -108,13 +118,26 @@ public class TradeServiceImpl implements TradeService {
         trade.setAccount(account);
         trade.setSession(request.getSession());
         trade.setStrategy(strategy);
-        trade.setPair(request.getPair());          // ← ADDED: updates pair in DB
+        trade.setPair(request.getPair());
         trade.setQty(request.getQty());
         trade.setRr(request.getRr());
         trade.setRiskPercent(request.getRiskPercent());
         trade.setBuySell(request.getBuySell());
         trade.setResultDollar(request.getResultDollar());
         trade.setResultPercent(resultPercent);
+
+        // ── UPDATE ACCOUNT BALANCE ──
+        if (oldAccount.getSrNo().equals(account.getSrNo())) {
+            // Same account: reverse old result then apply new result
+            account.setCurrentBalance(round(account.getCurrentBalance() - oldResultDollar + request.getResultDollar()));
+            accountRepository.save(account);
+        } else {
+            // Account changed: reverse old result from old account, apply new result to new account
+            oldAccount.setCurrentBalance(round(oldAccount.getCurrentBalance() - oldResultDollar));
+            accountRepository.save(oldAccount);
+            account.setCurrentBalance(round(account.getCurrentBalance() + request.getResultDollar()));
+            accountRepository.save(account);
+        }
 
         return tradeMapper.toResponse(tradeRepository.save(trade));
     }
@@ -126,6 +149,12 @@ public class TradeServiceImpl implements TradeService {
                 .orElseThrow(() -> new ResourceNotFoundException("Trade not found with id: " + srNo));
         if (!trade.getUser().getId().equals(user.getId()))
             throw new BadRequestException("You are not authorized to delete this trade");
+
+        // ── REVERSE ACCOUNT BALANCE on delete ──
+        Account account = trade.getAccount();
+        account.setCurrentBalance(round(account.getCurrentBalance() - trade.getResultDollar()));
+        accountRepository.save(account);
+
         tradeRepository.delete(trade);
     }
 
