@@ -7,7 +7,7 @@ import com.tradejournal.repository.TradeRepository;
 import com.tradejournal.service.DashboardService;
 import com.tradejournal.util.SessionUtil;
 import jakarta.servlet.http.HttpSession;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
