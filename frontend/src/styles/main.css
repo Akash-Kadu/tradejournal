@@ -151,3 +151,10 @@ tbody tr:last-child td { border-bottom: none; }
 .strategy-section .row .key { color: var(--text-muted); }
 .strategy-section .row .val { font-weight: 600; }
 .strategy-section .earned { font-size: 15px; font-weight: 700; color: var(--green); margin-top: 8px; }
+
+/* ── Show mobile logo on login/register when left panel is hidden ── */
+@media (max-width: 768px) {
+  .login-mobile-logo {
+    display: flex !important;
+  }
+}
