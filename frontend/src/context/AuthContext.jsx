@@ -5,18 +5,37 @@ const AuthContext = createContext(null);
 
 const GOOGLE_CLIENT_ID = '1095519591607-og3tnpijondavjq3u18n93ng2h9hao5p.apps.googleusercontent.com';
 
-// Detect frontend origin
-const FRONTEND_URL = window.location.origin; // e.g. https://ourtradejournal.vercel.app
-
 export function AuthProvider({ children }) {
   const [user, setUser]       = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get('/auth/me')
-      .then(r => setUser(r.data.data))
-      .catch(() => setUser(null))
-      .finally(() => setLoading(false));
+    const init = async () => {
+      try {
+        // Check if Google redirected back with a one-time token
+        const params      = new URLSearchParams(window.location.search);
+        const googleToken = params.get('google_token');
+
+        if (googleToken) {
+          // Exchange one-time token for a real session (sets cookie properly)
+          const r = await api.get(`/auth/google/verify?token=${googleToken}`);
+          setUser(r.data.data);
+          // Clean the token from the URL, then go to dashboard
+          window.history.replaceState({}, '', '/dashboard');
+          window.location.href = '/dashboard';
+          return;
+        }
+
+        // Normal session check
+        const r = await api.get('/auth/me');
+        setUser(r.data.data);
+      } catch {
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    init();
   }, []);
 
   const login = async (email, password) => {
@@ -30,9 +49,7 @@ export function AuthProvider({ children }) {
     return r.data.data;
   };
 
-  // ── Google OAuth — redirect flow (no popup) ───────────────────────────────
-  // Navigates the browser directly to Google, which redirects to the backend,
-  // which sets the session and redirects to /dashboard on the frontend.
+  // Redirect browser to Google — no popup needed
   const googleLogin = () => {
     const redirectUri = window.location.hostname === 'localhost'
       ? 'http://localhost:8080/api/auth/google/callback'
@@ -45,11 +62,9 @@ export function AuthProvider({ children }) {
       scope:         'openid email profile',
       access_type:   'offline',
       prompt:        'select_account',
-      // Pass frontend URL so backend knows where to redirect after success
-      state: FRONTEND_URL,
+      state:         window.location.origin, // frontend URL passed to backend
     });
 
-    // Full browser redirect — no popup needed
     window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
   };
 
