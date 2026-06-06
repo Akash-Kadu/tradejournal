@@ -10,10 +10,7 @@ import api        from '../services/api';
 
 const today       = new Date();
 const startOfYear = new Date(today.getFullYear(), 0, 1); // Jan 1 of current year = YTD
-// use local date parts — toISOString() converts to UTC which gives yesterday in IST
-const fmt8        = d => d instanceof Date
-  ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
-  : d;
+const fmt8        = d => { if (!(d instanceof Date)) return d; const y = d.getFullYear(); const m = String(d.getMonth()+1).padStart(2,'0'); const day = String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; };
 const MONTHS      = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DAY_HDR     = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
@@ -353,9 +350,9 @@ export default function DashboardPage() {
   const fadeIn = { opacity: loaded ? 1 : 0, transform: loaded ? 'translateY(0)' : 'translateY(12px)', transition: 'opacity .4s ease, transform .4s ease' };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc', fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="layout" style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#f8fafc', fontFamily: "'DM Sans', sans-serif" }}>
       <Sidebar />
-      <main style={{ flex: 1, padding: '12px 22px', overflowY: 'auto', minWidth: 0 }}>
+      <main className="main-content" style={{ flex: 1, padding: '12px 22px', overflowY: 'auto', minWidth: 0 }}>
 
         {/* ── Header ─────────────────────────────────────────────── */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
