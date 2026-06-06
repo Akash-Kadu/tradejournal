@@ -26,8 +26,13 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false)
+    // Nullable for Google OAuth users (they have no password)
+    @Column
     private String password;
+
+    // Google OAuth user ID — null for email/password users
+    @Column(unique = true)
+    private String googleId;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
