@@ -589,7 +589,7 @@ export default function IdeasPage() {
           <div className="ip-expand-overlay" onClick={e => e.target === e.currentTarget && setExpandIdea(null)}>
             <div className="ip-expand">
               <button className="ip-close-btn" onClick={() => setExpandIdea(null)}>Close ×</button>
-              <div style={{ fontSize:11, color:'#94a3b8', fontFamily:'monospace', marginBottom:4 }}>{expandIdea.ideaDate} · saved {expandIdea.createdAt ? (() => { const d = new Date(expandIdea.createdAt); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); })() : ''}</div>
+              <div style={{ fontSize:11, color:'#94a3b8', fontFamily:'monospace', marginBottom:4 }}>{expandIdea.ideaDate} · saved {expandIdea.createdAt ? (() => { const d = new Date(expandIdea.createdAt + 'Z'); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); })() : ''}</div>
               <h2 style={{ fontSize:'1.3rem', fontWeight:800, color:'#0f172a', margin:'4px 0 0' }}>{expandIdea.title}</h2>
 
               {/* Images */}
