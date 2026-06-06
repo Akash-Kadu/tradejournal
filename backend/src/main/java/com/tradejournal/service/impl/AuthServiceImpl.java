@@ -11,7 +11,7 @@ import com.tradejournal.service.AuthService;
 import com.tradejournal.util.PasswordUtil;
 import com.tradejournal.util.SessionUtil;
 import jakarta.servlet.http.HttpSession;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -49,6 +49,11 @@ public class AuthServiceImpl implements AuthService {
     public UserResponse login(LoginRequest request, HttpSession session) {
         User user = userRepository.findByEmail(request.getEmail().toLowerCase().trim())
                 .orElseThrow(() -> new UnauthorizedException("Invalid email or password"));
+
+        // Google-only users have no password — tell them to use Google Sign-In
+        if (user.getPassword() == null) {
+            throw new UnauthorizedException("This account uses Google Sign-In. Please click 'Continue with Google'.");
+        }
 
         if (!PasswordUtil.matches(request.getPassword(), user.getPassword()))
             throw new UnauthorizedException("Invalid email or password");
