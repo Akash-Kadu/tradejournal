@@ -34,3 +34,8 @@ export default function App() {
           <Route path="/trades"    element={<ProtectedRoute><TradesPage /></ProtectedRoute>} />
           <Route path="/ideas"     element={<ProtectedRoute><IdeasPage /></ProtectedRoute>} />
           <Route path="*"          element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
+  );
+}
