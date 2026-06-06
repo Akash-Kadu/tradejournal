@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, googleLogin } = useAuth();
   const navigate = useNavigate();
 
   const [loginData, setLoginData] = useState({ email: '', password: '' });
@@ -20,6 +20,17 @@ export default function LoginPage() {
       navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');
+    } finally { setLoading(false); }
+  };
+
+  const handleGoogleLogin = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      await googleLogin();
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.message || 'Google sign-in failed');
     } finally { setLoading(false); }
   };
 
@@ -122,9 +133,9 @@ export default function LoginPage() {
 
               <div style={{ textAlign:'center', color:'#94a3b8', margin:'14px 0', fontSize:12 }}>or</div>
 
-              <button type="button" style={{ width:'100%', padding:'9px', background:'#fff', color:'#374151', border:'1px solid #e2e8f0', borderRadius:8, fontWeight:600, fontSize:13.5, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+              <button type="button" onClick={handleGoogleLogin} disabled={loading} style={{ width:'100%', padding:'9px', background:'#fff', color:'#374151', border:'1px solid #e2e8f0', borderRadius:8, fontWeight:600, fontSize:13.5, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
                 <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20H24v8h11.3C33.7 33.6 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.7 1.1 7.8 2.9l5.7-5.7C34 6.5 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11 0 20-9 20-20 0-1.3-.1-2.7-.4-4z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 15.1 18.9 12 24 12c3 0 5.7 1.1 7.8 2.9l5.7-5.7C34 6.5 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.3 35.3 26.8 36 24 36c-5.2 0-9.7-3.4-11.3-8.1l-6.5 5C9.6 39.6 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20H24v8h11.3c-.8 2.2-2.2 4-4.1 5.3l6.2 5.2C41.1 35.1 44 29.9 44 24c0-1.3-.1-2.7-.4-4z"/></svg>
-                Continue with Google
+                {loading ? 'Signing in…' : 'Continue with Google'}
               </button>
             </form>
           </div>
