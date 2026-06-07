@@ -161,6 +161,7 @@ tbody tr:last-child td { border-bottom: none; }
 /* Desktop sidebar: always shown on desktop */
 .sb-desktop {
   display: flex;
+  flex-direction: column;
 }
 
 /* Mobile topbar: hidden on desktop */
