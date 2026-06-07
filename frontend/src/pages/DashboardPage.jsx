@@ -53,57 +53,7 @@ const injectStyles = () => {
       transition:border-color .2s;
     }
     .dp-date-inputs input:focus { border-color:#2563eb; }
-
-    /* ── DESKTOP DEFAULTS ───────────────────────────────────── */
-    .dp-main-content { padding: 12px 22px; }
-    .dp-mobile-topbar { display: none; }
-    .dp-desktop-header { display: flex; }
-    .dp-mobile-perf { display: none; }
-    .dp-mobile-datepicker { display: none; }
-    .dp-stats-grid { display: grid; }
-    .dp-bottom-grid { display: grid; }
-
-    /* ── MOBILE DASHBOARD ────────────────────────────────────── */
-    @media (max-width: 768px) {
-      .dp-main-content { padding: 0 16px 24px !important; }
-      .dp-mobile-topbar {
-        display: flex !important;
-        position: sticky; top: 0; z-index: 50;
-        align-items: center; justify-content: space-between;
-        padding: 0 16px; height: 52px;
-        background: #fff; border-bottom: 1px solid #e2e8f0;
-        flex-shrink: 0; margin: -12px -16px 0;
-      }
-      .dp-desktop-header { display: none !important; }
-      .dp-stats-grid {
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 10px !important;
-      }
-      .dp-stats-row1 {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr !important;
-        gap: 10px !important;
-      }
-      .dp-stats-row2 {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr 1fr !important;
-        gap: 10px !important;
-      }
-      .dp-stats-perf { display: none !important; }
-      .dp-bottom-grid {
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 12px !important;
-      }
-      .dp-calendar-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; }
-      .dp-calendar-inner { min-width: 500px !important; }
-      .dp-right-col { width: 100% !important; }
-      .dp-summary-panel { display: none !important; }
-      .dp-mobile-perf { display: block !important; }
-      .dp-mobile-datepicker { display: block !important; }
-    }
-  \`;
+  `;
   document.head.appendChild(s);
 };
 
@@ -400,21 +350,12 @@ export default function DashboardPage() {
   const fadeIn = { opacity: loaded ? 1 : 0, transform: loaded ? 'translateY(0)' : 'translateY(12px)', transition: 'opacity .4s ease, transform .4s ease' };
 
   return (
-    <div className="layout" style={{ display: 'flex', background: '#f8fafc', fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="layout" style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#f8fafc', fontFamily: "'DM Sans', sans-serif" }}>
       <Sidebar />
-      <main className="main-content dp-main-content" style={{ flex: 1, overflowY: 'auto', minWidth: 0 }}>
+      <main className="main-content" style={{ flex: 1, padding: '12px 22px', overflowY: 'auto', minWidth: 0 }}>
 
-        {/* ── Mobile top bar ──────────────────────────────────────── */}
-        <div className="dp-mobile-topbar" style={{ margin: '-12px -22px 12px', width: 'calc(100% + 44px)' }}>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 15 }}>Hi, {user?.fullName?.split(' ')[0]} 👋</div>
-            <div style={{ fontSize: 11, color: '#64748b' }}>Here's your performance overview</div>
-          </div>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-        </div>
-
-        {/* ── Desktop Header ──────────────────────────────────────── */}
-        <div className="dp-desktop-header" style={{ justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+        {/* ── Header ─────────────────────────────────────────────── */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
           <div>
             <h1 style={{ fontSize: 17, fontWeight: 700, margin: 0 }}>Welcome back, {user?.fullName?.split(' ')[0]} 👋</h1>
             <p style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>Here's your trading performance overview.</p>
@@ -454,16 +395,11 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ── Mobile date picker ─────────────────────────────────── */}
-        <div className="dp-mobile-datepicker" style={{ marginBottom: 10 }}>
-          <DateRangePicker startDate={startDate} endDate={endDate} onStart={setStartDate} onEnd={setEndDate}/>
-        </div>
-
         {/* ── Stats row ──────────────────────────────────────────── */}
-        <div className="dp-stats-grid" style={{ gridTemplateColumns: '1fr 1.6fr 1fr 1fr 2.6fr', gap: 10, marginBottom: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr 1fr 1fr 2.6fr', gap: 10, marginBottom: 12, ...fadeIn }}>
 
           {/* Net P&L */}
-          <div className="dp-stat-netpnl" style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '11px 13px', boxShadow: '0 1px 4px rgba(0,0,0,.06)', transition: 'box-shadow .25s, transform .2s', cursor: 'default' }}
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '11px 13px', boxShadow: '0 1px 4px rgba(0,0,0,.06)', transition: 'box-shadow .25s, transform .2s', cursor: 'default' }}
             onMouseEnter={e => { e.currentTarget.style.boxShadow='0 6px 18px rgba(0,0,0,.11)'; e.currentTarget.style.transform='translateY(-2px)'; }}
             onMouseLeave={e => { e.currentTarget.style.boxShadow='0 1px 4px rgba(0,0,0,.06)';  e.currentTarget.style.transform='translateY(0)'; }}>
             <div style={{ fontSize: 10, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 3 }}>Net P&L</div>
@@ -526,7 +462,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Stats merged card */}
-          <div className="dp-stats-perf" style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '11px 13px', boxShadow: '0 1px 4px rgba(0,0,0,.06)', display: 'flex', alignItems: 'stretch', transition: 'box-shadow .25s, transform .2s' }}
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '11px 13px', boxShadow: '0 1px 4px rgba(0,0,0,.06)', display: 'flex', alignItems: 'stretch', transition: 'box-shadow .25s, transform .2s' }}
             onMouseEnter={e => { e.currentTarget.style.boxShadow='0 6px 18px rgba(0,0,0,.11)'; e.currentTarget.style.transform='translateY(-2px)'; }}
             onMouseLeave={e => { e.currentTarget.style.boxShadow='0 1px 4px rgba(0,0,0,.06)';  e.currentTarget.style.transform='translateY(0)'; }}>
             <div style={{ flex: 1.6 }}>
@@ -563,10 +499,10 @@ export default function DashboardPage() {
         </div>
 
         {/* ── Calendar + Right Panel ──────────────────────────────── */}
-        <div className="dp-bottom-grid" style={{ gridTemplateColumns: '1fr 520px', gap: 12, transitionDelay: '.1s', alignItems: 'stretch' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 520px', gap: 12, ...fadeIn, transitionDelay: '.1s', alignItems: 'stretch' }}>
 
           {/* Calendar */}
-          <div className="dp-calendar-wrap" style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '14px 16px', boxShadow: '0 1px 4px rgba(0,0,0,.06)', transition: 'box-shadow .25s', display: 'flex', flexDirection: 'column' }}
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '14px 16px', boxShadow: '0 1px 4px rgba(0,0,0,.06)', transition: 'box-shadow .25s', display: 'flex', flexDirection: 'column' }}
             onMouseEnter={e => e.currentTarget.style.boxShadow='0 4px 16px rgba(0,0,0,.09)'}
             onMouseLeave={e => e.currentTarget.style.boxShadow='0 1px 4px rgba(0,0,0,.06)'}>
             {/* Calendar header */}
@@ -596,7 +532,6 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="dp-calendar-inner">
             {/* Day headers */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 0.81fr))', gap: 5, marginBottom: 3 }}>
               {DAY_HDR.map(h => <div key={h} style={{ textAlign: 'center', fontSize: 12, fontWeight: 600, color: '#94a3b8', padding: '3px 0' }}>{h}</div>)}
@@ -648,14 +583,13 @@ export default function DashboardPage() {
   );
 })}
             </div>
-            </div>{/* end dp-calendar-inner */}
           </div>
 
           {/* Right column: Summary + Growth chart */}
-          <div className="dp-right-col" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
             {/* Summary panel */}
-            <div className="dp-summary-panel" style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '13px 15px', boxShadow: '0 1px 4px rgba(0,0,0,.06)', transition: 'box-shadow .25s' }}
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '13px 15px', boxShadow: '0 1px 4px rgba(0,0,0,.06)', transition: 'box-shadow .25s' }}
               onMouseEnter={e => e.currentTarget.style.boxShadow='0 4px 16px rgba(0,0,0,.09)'}
               onMouseLeave={e => e.currentTarget.style.boxShadow='0 1px 4px rgba(0,0,0,.06)'}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
@@ -796,26 +730,6 @@ export default function DashboardPage() {
             </div>
 
           </div>
-        </div>
-
-        {/* ── Mobile Performance Overview ───────────────────────── */}
-        <div className="dp-mobile-perf" style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '14px 16px', marginTop: 12, boxShadow: '0 1px 4px rgba(0,0,0,.06)'}}>
-          <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 12 }}>Performance Overview</div>
-          {[
-            ['Days Win %', `${data?.daysWinPercent?.toFixed(1) ?? 0}% (${data?.daysWin ?? 0}/${data?.totalTradingDays ?? 0})`, '#16a34a'],
-            ['Total Win / Loss', `${fmtR(data?.totalWin)} / -${fmtR(Math.abs(data?.totalLoss ?? 0))}`, null],
-            ['Avg Win / Loss', `${fmtR(data?.avgWin)} / -${fmtR(Math.abs(data?.avgLoss ?? 0))}`, null],
-            ['Biggest Win', fmtR(data?.biggestWin), '#16a34a'],
-            ['Biggest Loss', `-${fmtR(Math.abs(data?.biggestLoss ?? 0))}`, '#dc2626'],
-          ].map(([k, v, c]) => (
-            <div key={k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f1f5f9', fontSize: 13 }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#64748b' }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: c || '#94a3b8', flexShrink: 0, display: 'inline-block' }}/>
-                {k}
-              </span>
-              <span style={{ fontWeight: 700, color: c || '#0f172a', fontSize: 13 }}>{v}</span>
-            </div>
-          ))}
         </div>
 
       </main>
