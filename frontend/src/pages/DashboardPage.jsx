@@ -395,7 +395,7 @@ export default function DashboardPage() {
   const fadeIn = { opacity: loaded ? 1 : 0, transform: loaded ? 'translateY(0)' : 'translateY(12px)', transition: 'opacity .4s ease, transform .4s ease' };
 
   return (
-    <div className="layout" style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#f8fafc', fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="layout" style={{ display: 'flex', background: '#f8fafc', fontFamily: "'DM Sans', sans-serif" }}>
       <Sidebar />
       <main className="main-content" style={{ flex: 1, padding: '12px 22px', overflowY: 'auto', minWidth: 0 }}>
 
