@@ -65,7 +65,7 @@ const injectStyles = () => {
 
     /* ── MOBILE DASHBOARD ────────────────────────────────────── */
     @media (max-width: 768px) {
-      .dp-main-content { padding: 68px 16px 24px !important; }
+      .dp-main-content { padding: 0 16px 24px !important; }
       .dp-mobile-topbar {
         display: flex !important;
         position: sticky; top: 0; z-index: 50;
@@ -460,7 +460,7 @@ export default function DashboardPage() {
         </div>
 
         {/* ── Stats row ──────────────────────────────────────────── */}
-        <div className="dp-stats-grid" style={{ gridTemplateColumns: '1fr 1.6fr 1fr 1fr 2.6fr', gap: 10, marginBottom: 12, ...fadeIn }}>
+        <div className="dp-stats-grid" style={{ gridTemplateColumns: '1fr 1.6fr 1fr 1fr 2.6fr', gap: 10, marginBottom: 12 }}>
 
           {/* Net P&L */}
           <div className="dp-stat-netpnl" style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '11px 13px', boxShadow: '0 1px 4px rgba(0,0,0,.06)', transition: 'box-shadow .25s, transform .2s', cursor: 'default' }}
@@ -563,7 +563,7 @@ export default function DashboardPage() {
         </div>
 
         {/* ── Calendar + Right Panel ──────────────────────────────── */}
-        <div className="dp-bottom-grid" style={{ gridTemplateColumns: '1fr 520px', gap: 12, ...fadeIn, transitionDelay: '.1s', alignItems: 'stretch' }}>
+        <div className="dp-bottom-grid" style={{ gridTemplateColumns: '1fr 520px', gap: 12, transitionDelay: '.1s', alignItems: 'stretch' }}>
 
           {/* Calendar */}
           <div className="dp-calendar-wrap" style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '14px 16px', boxShadow: '0 1px 4px rgba(0,0,0,.06)', transition: 'box-shadow .25s', display: 'flex', flexDirection: 'column' }}
