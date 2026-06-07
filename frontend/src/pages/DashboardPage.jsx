@@ -55,6 +55,7 @@ const injectStyles = () => {
     .dp-date-inputs input:focus { border-color:#2563eb; }
 
     /* ── DESKTOP DEFAULTS ───────────────────────────────────── */
+    .dp-main-content { padding: 12px 22px; }
     .dp-mobile-topbar { display: none; }
     .dp-desktop-header { display: flex; }
     .dp-mobile-perf { display: none; }
@@ -64,6 +65,7 @@ const injectStyles = () => {
 
     /* ── MOBILE DASHBOARD ────────────────────────────────────── */
     @media (max-width: 768px) {
+      .dp-main-content { padding: 68px 16px 24px !important; }
       .dp-mobile-topbar {
         display: flex !important;
         position: sticky; top: 0; z-index: 50;
@@ -400,7 +402,7 @@ export default function DashboardPage() {
   return (
     <div className="layout" style={{ display: 'flex', background: '#f8fafc', fontFamily: "'DM Sans', sans-serif" }}>
       <Sidebar />
-      <main className="main-content" style={{ flex: 1, padding: '12px 22px', overflowY: 'auto', minWidth: 0 }}>
+      <main className="main-content dp-main-content" style={{ flex: 1, overflowY: 'auto', minWidth: 0 }}>
 
         {/* ── Mobile top bar ──────────────────────────────────────── */}
         <div className="dp-mobile-topbar" style={{ margin: '-12px -22px 12px', width: 'calc(100% + 44px)' }}>
