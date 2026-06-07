@@ -327,3 +327,9 @@ tbody tr:last-child td { border-bottom: none; }
 @media (max-width: 400px) {
   .stat-cards { grid-template-columns: 1fr !important; }
 }
+
+/* ── Dashboard mobile date picker ─────────────────────────── */
+.dp-mobile-datepicker { display: none; }
+@media (max-width: 768px) {
+  .dp-mobile-datepicker { display: block !important; }
+}
